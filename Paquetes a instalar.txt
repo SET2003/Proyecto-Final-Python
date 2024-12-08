@@ -1,0 +1,7 @@
+openpyxl
+
+
+Comandos
+
+pip show (name)
+pip install -r requirements.txt
