@@ -1,2 +1,0 @@
-En el Kp al tener un valor de 1e-4 cuando usas el step proporciona un float de 1e-15, habria que ver como hacer
-que trunque ese valor al formato de %4.f
