@@ -13,6 +13,8 @@ from datetime import date
 import numpy as np
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Titulos para la pagina principal y para la barra lateral
 st.markdown("# Página Principal 🎈")
@@ -91,6 +93,80 @@ with col1:
     # Junto en un solo string la fecha y hora seleccionada para pasarsela a la tabla
     Fecha_inicial_seleccionado = Fecha_inicial + ' ' + Tiempo_inicial
     Fecha_final_seleccionado = Fecha_final + ' ' + Tiempo_final
+    #Agregué una variable donde están los datos filtrados por el usuario
+    Datos_filtrados = Datos.loc[Fecha_inicial_seleccionado:Fecha_final_seleccionado, :]
 
     # Muestro la tabla
     Datos.loc[Fecha_inicial_seleccionado:Fecha_final_seleccionado, :]
+
+#A PARTIR DE ACÁ VAN LAS GRÁFICAS 
+
+st.write('# Gráficas')
+tab1, tab2, tab3 = st.tabs(['Gráfico de líneas', 'Heatmap temporal', 'Gráfico de dispersión'])
+
+#Verifico si la cantidad de puntos supera un límite donde se realentizaría mucho la página (10000 puntos), si lo es muestro un warning diciendo que son muchos los puntos
+#como para realizar un gráfico.
+
+if len(Datos_filtrados) > 10000: 
+    st.warning("El rango seleccionado contiene demasiados puntos para graficar. Reduce el rango para mejorar el rendimiento.")
+else:
+    with tab1:
+        
+        
+        # Creo la figura
+        plt.figure(figsize=(12, 6))
+        plt.plot(Datos_filtrados.index, Datos_filtrados[G], label='Irradiancia (W/m²)', color='orange')
+        plt.plot(Datos_filtrados.index, Datos_filtrados[T], label='Temperatura (°C)', color='blue')
+
+        plt.title("Evolución de Temperatura e Irradiancia", fontsize=16)
+        plt.xlabel("Tiempo", fontsize=12)
+        plt.ylabel("Valor", fontsize=12)
+        plt.legend()
+        plt.grid(alpha=0.4)
+        plt.tight_layout()
+
+        # Muestro en Streamlit
+        st.pyplot(plt)
+
+    with tab2:
+        
+        # Crear el heatmap
+        fig, ax = plt.subplots(figsize=(12, 6))
+        
+        # Generar la tabla dinámica para el heatmap
+        heatmap_data = Datos_filtrados.pivot_table(
+            index=Datos_filtrados.index.hour, 
+            columns=Datos_filtrados.index.dayofyear, 
+            values=T, 
+            aggfunc='mean'
+        ).sort_index(ascending=False) #Esto hace que se ordenen las horas de forma descendente
+
+        # Crear el heatmap
+        sns.heatmap(
+            heatmap_data,
+            cmap="flare", #Paleta de colores
+            ax=ax,
+            cbar_kws={'label': 'Temperactura (°C)'}  # Etiqueta para la barra de color
+        )
+
+        # Etiquetas y título
+        ax.set_xlabel('Día del año')
+        ax.set_ylabel('Hora del día')
+        ax.set_title('Heatmap de Temperatura Promedio por Hora y Día')
+        
+        # Mostrar el heatmap
+        st.pyplot(fig)
+    with tab3:
+        
+        # Crear el scatter plot (Gráfico de dispersión)
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.scatter(Datos_filtrados[G], Datos_filtrados[T], alpha=0.6, c=Datos_filtrados[G], cmap="viridis")
+
+        # Agregar etiquetas y título
+        ax.set_title("Relación entre Irradiancia y Temperatura", fontsize=16)
+        ax.set_xlabel("Irradiancia (W/m²)", fontsize=12)
+        ax.set_ylabel("Temperatura (°C)", fontsize=12)
+        ax.grid(alpha=0.3)
+
+        # Mostrar la figura en Streamlit
+        st.pyplot(fig)
