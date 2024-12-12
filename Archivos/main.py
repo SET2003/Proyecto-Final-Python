@@ -15,6 +15,8 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import altair as alt
+
 # Titulos para la pagina principal y para la barra lateral
 st.markdown("# Página Principal 🎈")
 st.sidebar.markdown("# Página Principal 🎈")
@@ -121,33 +123,54 @@ else:
 
     with tab2:
         
-        # Crear el heatmap
-        fig, ax = plt.subplots(figsize=(12, 6))
+        # # Crear el heatmap
+        # fig, ax = plt.subplots(figsize=(12, 6))
         
-        # Generar la tabla dinámica para el heatmap
-        heatmap_data = Datos_filtrados.pivot_table(
-            index=Datos_filtrados.index.hour, 
-            columns=Datos_filtrados.index.dayofyear, 
-            values=T, 
-            aggfunc='mean'
-        ).sort_index(ascending=False) #Esto hace que se ordenen las horas de forma descendente
+        # # Generar la tabla dinámica para el heatmap
+        # heatmap_data = Datos_filtrados.pivot_table(
+        #     index=Datos_filtrados.index.hour, 
+        #     columns=Datos_filtrados.index.dayofyear, 
+        #     values=T, 
+        #     aggfunc='mean'
+        # ).sort_index(ascending=False) #Esto hace que se ordenen las horas de forma descendente
 
-        # Crear el heatmap
-        sns.heatmap(
-            heatmap_data,
-            cmap="flare", #Paleta de colores
-            ax=ax,
-            cbar_kws={'label': 'Temperactura (°C)'}  # Etiqueta para la barra de color
-        )
+        # # Crear el heatmap
+        # sns.heatmap(
+        #     heatmap_data,
+        #     cmap="flare", #Paleta de colores
+        #     ax=ax,
+        #     cbar_kws={'label': 'Temperactura (°C)'}  # Etiqueta para la barra de color
+        # )
 
-        # Etiquetas y título
-        ax.set_xlabel('Día del año')
-        ax.set_ylabel('Hora del día')
-        ax.set_title('Heatmap de Temperatura Promedio por Hora y Día')
+        # # Etiquetas y título
+        # ax.set_xlabel('Día del año')
+        # ax.set_ylabel('Hora del día')
+        # ax.set_title('Heatmap de Temperatura Promedio por Hora y Día')
         
         # Mostrar el heatmap
         st.markdown('### Mapa de calor de Temperatura')
-        st.pyplot(fig)
+        # st.pyplot(fig)
+        mapa_de_calor = Datos_filtrados.pivot_table(
+            index=Datos_filtrados.index,
+            values=T, 
+            aggfunc='mean'
+        ).sort_index(ascending=False)
+
+        df=mapa_de_calor.reset_index()
+        df["Fecha Formateada"]=df["Fecha"].dt.strftime("%Y-%m-%d")
+
+        # # Mapa de calor interactivo usando Altair
+
+        heatmap = alt.Chart(df).mark_rect().encode(
+            alt.X("Fecha Formateada:O", title="Fecha"),
+            y=alt.Y("hours(Fecha):O", title="Hora"),
+            color=alt.Color('Temperatura (°C):Q', scale=alt.Scale(scheme="magma"), title="Temperatura (°C)")  # Colores según temperatura
+        ).properties(   
+            title="Mapa de Calor: Temperatura por Día y Hora"
+        ).interactive()  # Habilitar interactividad (paneo y zoom)
+
+        # Mostrar el mapa de calor en Streamlit
+        st.altair_chart(heatmap, use_container_width=True)
 
     with tab3:
         
@@ -164,10 +187,6 @@ else:
         # Mostrar la figura en Streamlit
         st.markdown('### Gráfico de dispersión Irradiancia-Temperatura')
         st.pyplot(fig)
-
-
-
-# import altair as alt
 
 # # Datos de ejemplo
 # data = {
@@ -213,40 +232,7 @@ else:
 
 
 
-# # Generar datos de ejemplo
-# n_days = 7  # Número de días
-# n_hours = 24  # Número de horas en un día
 
-# # Crear un DataFrame con días, horas y temperaturas aleatorias
-# data = {
-#     "Día": np.repeat(pd.date_range(start="2024-01-01", periods=n_days, freq="D").strftime('%Y-%m-%d'), n_hours),
-#     "Hora": np.tile(range(n_hours), n_days),
-#     "Temperatura (°C)": np.random.uniform(15, 35, n_days * n_hours),  # Temperaturas aleatorias
-# }
-
-# heatmap_data = Datos_filtrados.pivot_table(
-#             index=Datos_filtrados.index.hour, 
-#             columns=Datos_filtrados.index.dayofyear, 
-#             values=T, 
-#             aggfunc='mean'
-#         ).sort_index(ascending=False)
-
-# heatmap_data=heatmap_data.reset_index()
-# heatmap_data
-# # Mapa de calor interactivo usando Altair
-# heatmap = alt.Chart(heatmap_data).mark_rect().encode(
-#     x=alt.X('heatmap_data.columns', title="Día"),  # Eje X: Días
-#     y=alt.Y('heatmap_data.index', title="Hora"),  # Eje Y: Horas
-#     color=alt.Color('heatmap_data', scale=alt.Scale(scheme="viridis"), title="Temperatura (°C)")  # Colores según temperatura
-#     #tooltip=[Datos_filtrados.index.dayofyear, Datos_filtrados.index.hour, Datos_filtrados[T]]  # Información interactiva
-# ).properties(
-#     width=700,
-#     height=400,
-#     title="Mapa de Calor: Temperatura por Día y Hora"
-# ).interactive()  # Habilitar interactividad (paneo y zoom)
-
-# # Mostrar el mapa de calor en Streamlit
-# st.altair_chart(heatmap, use_container_width=True)
 
 
 #
