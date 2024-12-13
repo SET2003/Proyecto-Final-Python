@@ -20,6 +20,7 @@ import seaborn as sns
 import time
 import requests
 import folium
+import altair as alt
 
 # Configuración de la página
 
@@ -83,8 +84,6 @@ with st.sidebar:
                          href='https://power.larc.nasa.gov/'),
         ]),
     ], open_all=True, color='#2aa7e1')
-
-
 
 #  Secciones
 
@@ -156,43 +155,44 @@ if seccion == 'Datos':
     else:
         Datos = pd.read_excel(Datos, index_col=0)
 
+    st.session_state['Datos']=Datos
     # Extraigo los indices de las columnas
     G, T = Datos.columns
 
     # Todos los datos que tiene que cargar el usuario, utiliza como predeterminados los de la UTN
 
-    """
-    ## **Proporcionar datos de la instalación**
-    """
-    col1, col2 = st.columns(2)
-    with col1:
-        N = st.number_input('Cantidad de Paneles',
-                            min_value=0, value=12, step=1)
-        # st.markdown('Gstd Irradiancia estándar en $\cfrac {W}{m^2}$')
-        Gstd = st.number_input(
-            'Gstd Irradiancia estándar en $\cfrac {W}{m^2}$', min_value=0.00, value=1000.00, step=100.00, format='%2.2f')
-        Tr = st.number_input('Temperatura de referencia',
-                             min_value=0.00, value=25.0, step=0.5, format='%1.1f')
-        Ppico = st.number_input(
-            'Potencia Pico de cada modulo [W]', min_value=0.00, value=240.00, step=10.00, format='%2.2f')
+    st.markdown("### Datos de la Instalación")
+    with st.expander("## Datos"):
 
-    with col2:
-        kp = st.number_input('Coeficiente de Temperatura-Potencia',
-                             max_value=0.0000, value=-0.0044, step=0.0001, format='%4.4f')
-        rend = st.number_input('Rendimiento global de la instalación',
-                               min_value=0.00, max_value=1.00, value=0.97, step=0.10, format='%2.2f')
-        Pinv = st.number_input(
-            'Potencia maxima/trabajo del inversor [Kw]', min_value=0.00, value=2.50, step=0.50, format='%2.2f')
-        Pmininv = st.number_input(
-            'Potencia minima del inversor [Kw]', min_value=0.00, value=0.00, max_value=Pinv, step=0.50, format='%2.2f')
+        col1, col2 = st.columns(2)
+        with col1:
+            N = st.number_input('Cantidad de Paneles',
+                                min_value=0, value=12, step=1)
+            # st.markdown('Gstd Irradiancia estándar en $\cfrac {W}{m^2}$')
+            Gstd = st.number_input(
+                'Gstd Irradiancia estándar en $\cfrac {W}{m^2}$', min_value=0.00, value=1000.00, step=100.00, format='%2.2f')
+            Tr = st.number_input('Temperatura de referencia',
+                                min_value=0.00, value=25.0, step=0.5, format='%1.1f')
+            Ppico = st.number_input(
+                'Potencia Pico de cada modulo [W]', min_value=0.00, value=240.00, step=10.00, format='%2.2f')
+
+        with col2:
+            kp = st.number_input('Coeficiente de Temperatura-Potencia',
+                                max_value=0.0000, value=-0.0044, step=0.0001, format='%4.4f')
+            rend = st.number_input('Rendimiento global de la instalación',
+                                min_value=0.00, max_value=1.00, value=0.97, step=0.10, format='%2.2f')
+            Pinv = st.number_input(
+                'Potencia maxima/trabajo del inversor [Kw]', min_value=0.00, value=2.50, step=0.50, format='%2.2f')
+            Pmininv = st.number_input(
+                'Potencia minima del inversor [Kw]', min_value=0.00, value=0.00, max_value=Pinv, step=0.50, format='%2.2f')
 
     # Corrijo la temperatura de celda en funcion a la temperatura ambiente
-    Tc = Datos[T] + 0.031*Datos[G]
+    Datos['Temperatura de Celda']= Datos[T] + 0.031*Datos[G]
+    Tc=Datos['Temperatura de Celda']
 
     # Calculo la potencia y la guardo en una nueva columna
-    P = N*Datos[G]/Gstd*Ppico*(1+kp*(Tc-Tr))*rend*1e-3
-    Datos['Potencia'] = P
-
+    Datos['Potencia']= N*Datos[G]/Gstd*Ppico*(1+kp*(Tc-Tr))*rend*1e-3
+   
     # Analizo si los valores de potencia estan dentro de rango, de no ser así los reemplazo por el correspondiente
     Datos['Potencia'] = Datos['Potencia'].where(Datos['Potencia'] < Pinv, Pinv)
     Datos['Potencia'] = Datos['Potencia'].where(Datos['Potencia'] > Pmininv, 0)
@@ -204,101 +204,114 @@ if seccion == 'Datos':
     col1, col2 = st.columns([0.7, 0.3])
 
     with col2:
+        
+        # Calculo los intervalos de tiempo
+        intervalos = Datos.index.to_series().diff().dropna()
+        intervalos=intervalos[0]
         # Le pido al usuario que seleccione que datos quiere ver, de predeterminado muestra toda la tabla
         Fecha_inicial = st.date_input(
-            'Seleccione Fecha Inicial', value=Datos.index[0], min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+            'Seleccione Fecha Inicial', value=Datos.index[0], min_value=Datos.index[0], max_value=Datos.index[-1], key='k').__str__()
+        if 'k' in st.session_state:
+            st.write('No eliminó la key')
+        else:
+            st.write('Se elimino la key')
         Fecha_final = st.date_input(
             'Seleccione Fecha Final', value=Datos.index[-1], min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
         Tiempo_inicial = st.time_input(
-            'Tiempo inicial', datetime.time(0, 0), step=600).__str__()
+            'Tiempo inicial', datetime.time(0, 0), step=intervalos).__str__()
         Tiempo_final = st.time_input(
-            'Tiempo final', datetime.time(23, 50), step=600).__str__()
-
+            'Tiempo final', datetime.time(23, 50), step=intervalos).__str__()
     with col1:
         # Junto en un solo string la fecha y hora seleccionada para pasarsela a la tabla
         Fecha_inicial_seleccionado = Fecha_inicial + ' ' + Tiempo_inicial
         Fecha_final_seleccionado = Fecha_final + ' ' + Tiempo_final
         # Agregué una variable donde están los datos filtrados por el usuario
         Datos_filtrados = Datos.loc[Fecha_inicial_seleccionado:Fecha_final_seleccionado, :]
-
+        
+        st.session_state["Datos_filtrados"]=Datos_filtrados
         # Muestro la tabla
-        Datos.loc[Fecha_inicial_seleccionado:Fecha_final_seleccionado, :]
+        st.session_state["Fecha"]=Fecha_final
+        Datos_filtrados
 
-    # A PARTIR DE ACÁ VAN LAS GRÁFICAS
+#
+#
+# A PARTIR DE ACÁ VAN LAS GRÁFICAS
+#
+#
 
     st.write('# Gráficas')
-    tab1, tab2, tab3 = st.tabs(
-        ['Gráfico de líneas', 'Heatmap temporal', 'Gráfico de dispersión'])
+    
+    if len(Datos_filtrados) > 10000:
+        st.warning(
+            "El rango seleccionado contiene demasiados datos para graficar. Reduce el rango para mejorar el rendimiento")
+        Limite_puntos=st.toggle('Deshabilitar limite de datos', value=False)
+    else:
+        Limite_puntos=True
+    
+    tab1, tab2, tab3, tab4 = st.tabs(
+        ['Gráfica de Potencia', 'Graficas de Temperatura', 'Grafica de Irradiancia' ,'Gráfico de dispersión G-T'])
 
     # Verifico si la cantidad de puntos supera un límite donde se realentizaría mucho la página (10000 puntos), si lo es muestro un warning diciendo que son muchos los puntos
     # como para realizar un gráfico.
-
-    if len(Datos_filtrados) > 10000:
-        st.warning(
-            "El rango seleccionado contiene demasiados puntos para graficar. Reduce el rango para mejorar el rendimiento.")
-    else:
+    
+    if Limite_puntos:
         with tab1:
+
+            st.markdown('### Gráfico de Potencia')
+            st.line_chart(data=Datos_filtrados, y="Potencia",
+                          x_label='Fecha/Tiempo', y_label='Potencia')
+
+        with tab2:
+                st.markdown('### Gráfico de Temperatura')
+                st.line_chart(data=Datos_filtrados, y=["Temperatura de Celda",T],
+                          x_label='Fecha/Tiempo', y_label='Temperatura (°C)')
+                st.markdown('### Mapa de calor de Temperatura')
+                # st.pyplot(fig)
+                mapa_de_calor = Datos_filtrados.pivot_table(
+                    index=Datos_filtrados.index,
+                    values=T, 
+                    aggfunc='mean'
+                ).sort_index(ascending=False)
+
+                df=mapa_de_calor.reset_index()
+                df["Fecha Formateada"]=df["Fecha"].dt.strftime("%Y-%m-%d")
+
+                # # Mapa de calor interactivo usando Altair
+
+                heatmap = alt.Chart(df).mark_rect().encode(
+                    alt.X("Fecha Formateada:O", title="Fecha"),
+                    y=alt.Y("hours(Fecha):O", title="Hora",sort="descending"),
+                    color=alt.Color('Temperatura (°C):Q', scale=alt.Scale(scheme="magma"), title="Temperatura (°C)")  # Colores según temperatura
+                ).properties(   
+                    title="Mapa de Calor: Temperatura por Día y Hora"
+                ).interactive()  # Habilitar interactividad (paneo y zoom)
+
+                # Mostrar el mapa de calor en Streamlit
+                st.altair_chart(heatmap, use_container_width=True)
+
+        with tab3:
+            
             st.markdown('### Gráfico de Irradiancia')
             st.line_chart(data=Datos_filtrados, y=G, x_label='Fecha/Tiempo',
                           y_label='Irradiancia (W/m²)', color="#ffc300")
-            st.markdown('### Gráfico de Temperatura')
-            st.line_chart(data=Datos_filtrados, y=T,
-                          x_label='Fecha/Tiempo', y_label='Temperatura (°C)')
+            
+        with tab4:
 
-        with tab2:
-
-            # Crear el heatmap
-            fig, ax = plt.subplots(figsize=(12, 6))
-
-            # Generar la tabla dinámica para el heatmap
-            heatmap_data = Datos_filtrados.pivot_table(
-                index=Datos_filtrados.index.hour,
-                columns=Datos_filtrados.index.dayofyear,
-                values=T,
-                aggfunc='mean'
-            ).sort_index(ascending=False)  # Esto hace que se ordenen las horas de forma descendente
-
-            # Crear el heatmap
-            sns.heatmap(
-                heatmap_data,
-                cmap="flare",  # Paleta de colores
-                ax=ax,
-                # Etiqueta para la barra de color
-                cbar_kws={'label': 'Temperactura (°C)'}
-            )
-
-            # Etiquetas y título
-            ax.set_xlabel('Día del año')
-            ax.set_ylabel('Hora del día')
-            ax.set_title('Heatmap de Temperatura Promedio por Hora y Día')
-
-            # Mostrar el heatmap
-            st.markdown('### Mapa de calor de Temperatura')
-            st.pyplot(fig)
-
-        with tab3:
-
-            # Crear el scatter plot (Gráfico de dispersión)
-            fig, ax = plt.subplots(figsize=(10, 6))
-            ax.scatter(Datos_filtrados[G], Datos_filtrados[T],
-                       alpha=0.6, c=Datos_filtrados[G], cmap="viridis")
-
-            # Agregar etiquetas y título
-            ax.set_title(
-                "Relación entre Irradiancia y Temperatura", fontsize=16)
-            ax.set_xlabel("Irradiancia (W/m²)", fontsize=12)
-            ax.set_ylabel("Temperatura (°C)", fontsize=12)
-            ax.grid(alpha=0.3)
-
-            # Mostrar la figura en Streamlit
             st.markdown('### Gráfico de dispersión Irradiancia-Temperatura')
-            st.pyplot(fig)
-
+            st.scatter_chart(data=Datos_filtrados, y=T, x=G, y_label="Temperatura (°C)", x_label="Irradiancia (W/m²)")
 
 
 if seccion == 'Estadísticas':
-    st.header ('Estadísticas')
-
+    if 'Datos' not in st.session_state:
+        st.write('Ingrese los datos a través de la pestaña datos')
+    else:
+        st.header ('Estadísticas')   
+        Datos_filtrados=st.session_state["Datos_filtrados"]
+        Datos=st.session_state["Datos"]
+        Fecha=st.session_state["Fecha"].__str__()
+        Fecha=datetime.datetime.strptime(Fecha, '%Y-%m-%d')
+        Fecha_final = st.date_input(
+                'Seleccione Fecha Final', value=Fecha, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
 
 
 if seccion == 'Mapas interactivos': 
@@ -388,103 +401,3 @@ if seccion == 'Feedback':
 
 
 
-
-# SI USAN ESTO DENLE ACOMODAR EN LA PAGINA DE DATOS, SINO SE DESCAJETA.
-# import altair as alt
-
-# # Datos de ejemplo
-# data = {
-#     "Tiempo": pd.date_range(start="2024-01-01", periods=10, freq="D"),
-#     "Temperatura (°C)": [20, 21, 19, 23, 24, 22, 20, 21, 23, 25],
-#     "Irradiancia (W/m²)": [400, 420, 410, 450, 470, 460, 430, 440, 480, 500],
-# }
-
-# # Convertir los datos a un DataFrame de pandas
-# df = pd.DataFrame(data)
-
-# # Escalas compartidas para mantener el zoom consistente
-# x_scale = alt.Scale(domain=list(df["Tiempo"].dt.to_pydatetime()))  # Escala de tiempo compartida
-
-# # Gráfico para la Temperatura con Tooltip
-# temp_chart = alt.Chart(df).mark_line(color="blue").encode(
-#     x=alt.X("Tiempo:T", scale=x_scale, title="Tiempo"),
-#     y=alt.Y("Temperatura (°C):Q", title="Temperatura (°C)", axis=alt.Axis(titleColor="blue")),
-#     tooltip=["Tiempo:T", "Temperatura (°C):Q"]  # Información al pasar el mouse
-# )
-
-# # Gráfico para la Irradiancia con Tooltip
-# irr_chart = alt.Chart(df).mark_line(color="orange").encode(
-#     x=alt.X("Tiempo:T", scale=x_scale),  # Reutiliza la escala de tiempo
-#     y=alt.Y("Irradiancia (W/m²):Q", title="Irradiancia (W/m²)", axis=alt.Axis(titleColor="orange")),
-#     tooltip=["Tiempo:T", "Irradiancia (W/m²):Q"]  # Información al pasar el mouse
-# )
-
-# # Combinar los gráficos con capas y ejes independientes
-# combined_chart = alt.layer(
-#     temp_chart,
-#     irr_chart
-# ).resolve_scale(
-#     y="independent"  # Escalas independientes para los ejes Y
-# ).properties(
-#     width=700,
-#     height=400,
-#     title="Gráfico de Temperatura e Irradiancia"
-# ).interactive()  # Habilitar interactividad (zoom y paneo)
-
-# # Mostrar el gráfico en Streamlit
-# st.altair_chart(combined_chart, use_container_width=True)
-
-
-# # Generar datos de ejemplo
-# n_days = 7  # Número de días
-# n_hours = 24  # Número de horas en un día
-
-# # Crear un DataFrame con días, horas y temperaturas aleatorias
-# data = {
-#     "Día": np.repeat(pd.date_range(start="2024-01-01", periods=n_days, freq="D").strftime('%Y-%m-%d'), n_hours),
-#     "Hora": np.tile(range(n_hours), n_days),
-#     "Temperatura (°C)": np.random.uniform(15, 35, n_days * n_hours),  # Temperaturas aleatorias
-# }
-
-# heatmap_data = Datos_filtrados.pivot_table(
-#             index=Datos_filtrados.index.hour,
-#             columns=Datos_filtrados.index.dayofyear,
-#             values=T,
-#             aggfunc='mean'
-#         ).sort_index(ascending=False)
-
-# heatmap_data=heatmap_data.reset_index()
-# heatmap_data
-# # Mapa de calor interactivo usando Altair
-# heatmap = alt.Chart(heatmap_data).mark_rect().encode(
-#     x=alt.X('heatmap_data.columns', title="Día"),  # Eje X: Días
-#     y=alt.Y('heatmap_data.index', title="Hora"),  # Eje Y: Horas
-#     color=alt.Color('heatmap_data', scale=alt.Scale(scheme="viridis"), title="Temperatura (°C)")  # Colores según temperatura
-#     #tooltip=[Datos_filtrados.index.dayofyear, Datos_filtrados.index.hour, Datos_filtrados[T]]  # Información interactiva
-# ).properties(
-#     width=700,
-#     height=400,
-#     title="Mapa de Calor: Temperatura por Día y Hora"
-# ).interactive()  # Habilitar interactividad (paneo y zoom)
-
-# # Mostrar el mapa de calor en Streamlit
-# st.altair_chart(heatmap, use_container_width=True)
-
-
-#
-#
-#
-#
-#  DE ACA EN ADELANTE SON PRUEBAS DE COMO HACER TABLA GENERICA EN FUNCION DE TIEMPOS GENERICOS, NO BORRAR
-#
-#
-#
-#
-# Tiempo_uno_tabla=str(Datos.index[0])
-# # Tiempo_uno_tabla=pd.to_datetime(Tiempo_uno_tabla)
-
-# b=Tiempo_uno_tabla.split(' ')
-# c=b[1].split(':')
-# st.write(type(b))
-# st.write(b)
-# st.write(c)
