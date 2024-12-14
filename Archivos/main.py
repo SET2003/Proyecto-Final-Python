@@ -8,8 +8,7 @@ Cosas obligatorias:
 
 """
 # Librerias que se utilizan o pueden llegar a ser necesarias
-import datetime
-from datetime import date
+from datetime import datetime as dt
 import numpy as np
 import streamlit as st
 import streamlit_antd_components as sac
@@ -91,28 +90,9 @@ if seccion == 'Acerca de':
     st.header('Acerca de esta aplicación', divider='grey')
     st.image('Archivos\\Imagenes\\banner_panelessolares.jpg', use_container_width=True)
     st.subheader('Descripción')
-    """
-    Esta aplicación, desarrollada como proyecto final en la asignatura "*Introducción a la programación
-    científica con MATLAB y PYTHON*" en el marco de la Facultad Regional Santa Fe - UTN, se centra en 
-    el análisis de distintos datos de un generador fotovotaico (GFV) para el cálculo de la potencia que
-    éste es capaz de entregar. Además, de acuerdo a los datos cargados de temperaturas, irradiancias y
-    tiempo, se calculan otros datos estadísticos de interés, así como gráficas y mapas interactivos. Se
-    toma como base incial el generador de la Facultad Regional Santa Fe de la Universidad Tecnológica 
-    Nacional.
-    """
-    st.subheader('Objetivos del proyecto')
-    """
-    * **Permitir al usuario cargar los datos de su propio generador** y otorgarle los resultados del análisis en 
-    tiempos específicos que desee.
-    * **Analizar el comportamiento del generador fotovoltaico de la Facultad Regional Santa Fe - UTN.** 
-    * Utilizar sintaxis *Python* y la librería *Streamlit* para crear la aplicación web interactiva. 
-    * Usar la librería *Pandas* para el manejo de *dataframes*. 
-    """
-    st.subheader('¿Cómo funciona?', help='En este apartado se describen las ecuaciones utilizadas para realizar los cálculos del GFV')
-    """
-    1. **Estimación de potencia generada**
     
-    """
+
+
 
     # Agregar aca toda la explicación del funcionamiento del generador.
 
@@ -159,7 +139,7 @@ if seccion == 'Datos':
     else:
         Datos = pd.read_excel(Datos, index_col=0)
 
-    st.session_state['Datos']=Datos
+    st.session_state["Datos"]=Datos
     # Extraigo los indices de las columnas
     G, T = Datos.columns
 
@@ -211,30 +191,114 @@ if seccion == 'Datos':
         
         # Calculo los intervalos de tiempo
         intervalos = Datos.index.to_series().diff().dropna()
-        intervalos=intervalos[0]
+        intervalos = intervalos[0]
         # Le pido al usuario que seleccione que datos quiere ver, de predeterminado muestra toda la tabla
-        Fecha_inicial = st.date_input(
-            'Seleccione Fecha Inicial', value=Datos.index[0], min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
-        Fecha_final = st.date_input(
-            'Seleccione Fecha Final', value=Datos.index[-1], min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
-        Tiempo_inicial = st.time_input(
-            'Tiempo inicial', datetime.time(0, 0), step=intervalos).__str__()
-        Tiempo_final = st.time_input(
-            'Tiempo final', datetime.time(23, 50), step=intervalos).__str__()
         
+        
+        
+        # if ('Fecha_inicial' or 'Fecha_final') not in st.session_state:
+        #     st.session_state['Fecha_inicial']=Datos.index[0]
+        #     st.session_state['Fecha_final']=Datos.index[-1]
+        
+        # Fecha_inicial_anterior= st.session_state["Fecha_inicial"]
+        # Fecha_inicial_anterior=dt.strptime(Fecha_inicial_anterior, '%Y-%m-%d')
+        # Fecha_final_anterior = st.session_state["Fecha_final"]
+        # Fecha_final_anterior=dt.strptime(Fecha_final_anterior, '%Y-%m-%d')
+
+        # st.session_state['Fecha_inicial'] = st.date_input(
+        #         'Seleccione Fecha Inicial', value=Fecha_inicial_anterior, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+        # st.session_state['Fecha_final']= st.date_input(
+        #         'Seleccione Fecha Final', value=Fecha_final_anterior, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+        
+        # Fecha_inicial=st.session_state['Fecha_inicial']
+        # Fecha_final=st.session_state['Fecha_final']
+
+
+
+
+        # if Fecha_inicial_anterior != Fecha_inicial:
+        #     st.session_state['Fecha_inicial']=Fecha_inicial
+        # if Fecha_final_anterior != Fecha_final:
+        #     st.session_state['Fecha_final']=Fecha_final
+
+        if ('Fecha_inicial' or 'Fecha_final') not in st.session_state:
+            Fecha_inicial = st.date_input(
+                'Seleccione Fecha Inicial', value=Datos.index[0], min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+            Fecha_final = st.date_input(
+                'Seleccione Fecha Final', value=Datos.index[-1], min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+        else:
+            
+            Fecha_inicial= st.session_state["Fecha_inicial"]
+            Fecha_inicial=dt.strptime(Fecha_inicial, '%Y-%m-%d')
+            Fecha_final = st.session_state["Fecha_final"]
+            Fecha_final=dt.strptime(Fecha_final, '%Y-%m-%d')
+
+            Fecha_inicial = st.date_input(
+                'Seleccione Fecha Inicial', value=Fecha_inicial, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+           
+            
+            Fecha_final = st.date_input(
+                'Seleccione Fecha Final', value=Fecha_final, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+            
+        # if 'Fecha_inicial' not in st.session_state:
+        #     st.write('La fecha inicial no está guardada')
+        #     Fecha_inicial = st.date_input(
+        #         'Seleccione Fecha Inicial', value=Datos.index[0], min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+        
+        # else:
+        #     st.write('La fecha si está guardada')
+        #     Fecha_inicial= st.session_state["Fecha_inicial"]
+        #     Fecha_inicial=dt.strptime(Fecha_inicial, '%Y-%m-%d')
+
+        #     Fecha_inicial = st.date_input(
+        #         'Seleccione Fecha Inicial', value=Fecha_inicial, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+
+        # if 'Fecha_final' not in st.session_state:
+            
+        #     Fecha_final = st.date_input(
+        #         'Seleccione Fecha Final', value=Datos.index[-1], min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+        
+        # else:
+        #     Fecha_final = st.session_state["Fecha_final"]
+        #     Fecha_final=dt.strptime(Fecha_final, '%Y-%m-%d')
+            
+        #     Fecha_final = st.date_input(
+        #         'Seleccione Fecha Final', value=Fecha_final, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+
+
+        if ('Tiempo_inicial' or 'Tiempo_final') not in st.session_state:    
+            Tiempo_inicial = st.time_input(
+                'Tiempo inicial', value=Datos.index[0], step=intervalos)
+            Tiempo_final = st.time_input(
+                'Tiempo final', value=Datos.index[-1], step=intervalos)
+        else:
+            Tiempo_inicial=st.session_state['Tiempo_inicial']
+            Tiempo_final=st.session_state['Tiempo_final']
+            Tiempo_inicial = st.time_input(
+                'Tiempo inicial', value=Tiempo_inicial, step=intervalos)
+            Tiempo_final = st.time_input(
+                'Tiempo final', value=Tiempo_final, step=intervalos)
+        
+        # st.session_state.pop("Tiempo_inicial")
+        # st.session_state.pop("Tiempo_final") 
+        # st.session_state.pop("Fecha_inicial") 
+        # st.session_state.pop("Fecha_final")     
+
+        st.session_state["Tiempo_inicial"]=Tiempo_inicial
+        st.session_state["Tiempo_final"]=Tiempo_final
         st.session_state["Fecha_inicial"]=Fecha_inicial
         st.session_state["Fecha_final"]=Fecha_final
         
     with col1:
         # Junto en un solo string la fecha y hora seleccionada para pasarsela a la tabla
-        Fecha_inicial_seleccionado = Fecha_inicial + ' ' + Tiempo_inicial
-        Fecha_final_seleccionado = Fecha_final + ' ' + Tiempo_final
+        Fecha_inicial_seleccionado = Fecha_inicial + ' ' + Tiempo_inicial.__str__()
+        Fecha_final_seleccionado = Fecha_final + ' ' + Tiempo_final.__str__()
         # Agregué una variable donde están los datos filtrados por el usuario
         Datos_filtrados = Datos.loc[Fecha_inicial_seleccionado:Fecha_final_seleccionado, :]
        
         # Muestro la tabla
         Datos_filtrados
-
+        
 #
 #
 # A PARTIR DE ACÁ VAN LAS GRÁFICAS
@@ -318,8 +382,8 @@ if seccion == 'Estadísticas':
         Datos=st.session_state["Datos"]
         Fecha_inicial = st.session_state["Fecha_inicial"]
         Fecha_final = st.session_state["Fecha_final"]
-        Fecha_inicial=datetime.datetime.strptime(Fecha_inicial, '%Y-%m-%d')
-        Fecha_final=datetime.datetime.strptime(Fecha_final, '%Y-%m-%d')
+        Fecha_inicial=dt.strptime(Fecha_inicial, '%Y-%m-%d')
+        Fecha_final=dt.strptime(Fecha_final, '%Y-%m-%d')
 
         col4, col5 = st.columns([0.7, 0.3])
         with col5:
@@ -327,15 +391,24 @@ if seccion == 'Estadísticas':
                 'Seleccione Fecha inicial', value=Fecha_inicial, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
             Fecha_final = st.date_input(
                 'Seleccione Fecha Final', value=Fecha_final, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+            
+            st.session_state["Fecha_inicial"]=Fecha_inicial
+            st.session_state["Fecha_final"]=Fecha_final
+
         with col4:
             chart_pot = Datos[(Datos.index >= Fecha_inicial) & (Datos.index <= Fecha_final)].drop(columns=['Temperatura (°C)', 'Irradiancia (W/m²)', 'Temperatura de Celda'], errors='ignore') #Filtro la tabla y le saco las columnas excedentes
             if option == "En semanas" :
                 potencia_media = chart_pot.resample('W').mean() #Uso el resample para calcular la media
                 st.bar_chart(potencia_media)
+                
+                chart_pot.resample('W')
+
             if option == "En días" :
                 potencia_media = chart_pot.resample('D').mean() #Uso el resample para calcular la media
                 st.bar_chart(potencia_media)
 
+        
+       
         st.write('### Días principales')
 
         col6, col7 = st.columns([0.5, 0.5])
