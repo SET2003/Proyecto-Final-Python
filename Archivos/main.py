@@ -31,7 +31,7 @@ st.set_page_config(
     menu_items={
         'Get Help': 'https://www.extremelycoolapp.com/help',
         'Report a bug': "https://www.extremelycoolapp.com/bug",
-        'About': "# This is a header. This is an *extremely* cool app!"
+        'About': "# Página del Proyecto de Generador Fotovoltaico"
         #VER DE MODIFICAR ESTE MENU
     }
 )
@@ -71,7 +71,7 @@ with st.sidebar:
         sac.MenuItem('Generador', icon='sun-fill', children=[
             sac.MenuItem('Datos', icon='clipboard-data-fill'),
             sac.MenuItem('Estadísticas', icon='bar-chart-line-fill'),
-            sac.MenuItem('Mapas interactivos', icon='map-fill'),
+            sac.MenuItem('Mapas', icon='map-fill'),
         ]),
         sac.MenuItem('Ayuda', icon='question-circle-fill'),
         sac.MenuItem('Feedback', icon='chat-right-heart-fill'),
@@ -81,6 +81,10 @@ with st.sidebar:
                          href='https://globalsolaratlas.info/map'),
             sac.MenuItem('NASA POWER', icon='link-45deg',
                          href='https://power.larc.nasa.gov/'),
+            sac.MenuItem('Servicio Meteorológico Nacional', icon='link-45deg',
+                         href='https://www.smn.gob.ar/clima/vigilancia-mapas'),
+            sac.MenuItem('The Weather Channel', icon='link-45deg',
+                         href='https://weather.com/es-CR/tiempo/mapas/interactive/l/Santa+Fe+de+la+Vera+Cruz+SF+ARXX4963:1:AR'),
         ]),
     ], open_all=True, color='#2aa7e1')
 
@@ -90,35 +94,141 @@ if seccion == 'Acerca de':
     st.header('Acerca de esta aplicación', divider='grey')
     st.image('Archivos\\Imagenes\\banner_panelessolares.jpg', use_container_width=True)
     st.subheader('Descripción')
+
+    st.markdown("""<div style='text-align: justify;'>
+    Esta aplicación, desarrollada como proyecto final en la asignatura "Introducción a la programación
+    científica con MATLAB y PYTHON" en el marco de la Facultad Regional Santa Fe - UTN, se centra en 
+    el análisis de distintos datos de un generador fotovotaico (GFV) para el cálculo de la potencia que
+    éste es capaz de entregar. Además, de acuerdo a la información cargada de temperaturas, irradiancias y
+    tiempo, se calculan otros datos estadísticos de interés, así como gráficas y mapas interactivos. Se
+    toma como base incial el generador de la Facultad Regional Santa Fe de la Universidad Tecnológica 
+    Nacional.
+    </div> """, unsafe_allow_html=True)
+
+    st.subheader('Objetivos del proyecto')
+    """
+    * **Permitir al usuario cargar los datos de su propio generador** y otorgarle los resultados del análisis en 
+    tiempos específicos que desee.
+    * **Analizar el comportamiento del generador fotovoltaico de la Facultad Regional Santa Fe - UTN.** 
+    * Utilizar sintaxis *Python* y la librería *Streamlit* para crear la aplicación web interactiva. 
+    * Usar la librería *Pandas* para el manejo de *dataframes*. 
+    """
+    st.subheader('¿Cómo funciona?', help='En este apartado se describe el funcionamiento del GFV, así como el modelo matemático utilizado. Extraído de *Guía del Proyecto*')
     
+    st.markdown("""<div style='text-align: justify;'>
+    Un generador fotovoltaico (GFV) convierte parte de la energía proveniente de la radicación solar en
+    la forma eléctrica. La instalación se ejecuta en forma modular; una cantidad N de paneles (o módulos)
+    se vinculan a través de sus terminales de salida en una configuración mixta serie-paralelo. El conexionado
+    serie se utiliza cuando se pretende incrementar la potencia de salida elevando el nivel de tensión eléctrica
+    (diferencia de potencial total del conjunto). El conexionado paralelo, por su parte, se realiza cuando el
+    incremento de potencia se logra elevando el nivel de la corriente entregada. En la práctica, un GFV puede
+    utilizar una combinación de módulos conectados en serie, los que a su vez se vinculan en paralelo con otros
+    conjuntos de conexionados serie. 
+    La tensión eléctrica provista por un GFV es del tipo continua, es decir, que se mantiene constante siempre que lo hagan las condiciones de radiación solar y temperatura. No obstante, dado que esto último no es
+    posible, se requiere de un equipo electrónico que funciona como controlador, que busca estabilizar las condiciones de operación siempre que sea posible. Una variante muy difundida altera convenientemente dicha
+    tensión para que la potencia erogada sea la máxima posible de acuerdo con las condiciones meteorológicas
+    del momento. Asimismo, en virtud de que las redes eléctricas no suelen operar con tensión continua, sino
+    en forma alterna (con una variación sinusoidal en el tiempo), un circuito electrónico “inversor” es requerido
+    para realizar la conversión. Es habitual que un único equipamiento cumpla
+    simultáneamente las funciones de controlador e inversor. </div> """, unsafe_allow_html=True)
+    """
 
+    """
+    """
+    **1. Estimación de potencia generada**
+    """
+    
+    st.markdown("""<div style='text-align: justify;'>
+    Existen numerosos modelos matemáticos para representar el funcionamiento de un GFV. La configuración de las conexiones entre módulos es relevante si se pretende que el modelo obtenga la tensión y corriente
+    de operación. En otras circunstancias, cuando interese fundamentalmente la potencia eléctrica entregada,
+    pueden emplearse modelos simplificados. Por caso, la siguiente expresión obtiene la potencia eléctrica P
+    (en kilo-Watt) obtenida por un GFV, siempre que todos los módulos sean idénticos y cuando se utiliza un
+    controlador de potencia que altera la condición de tensión de trabajo para maximizar el rendimiento.
+    </div> """, unsafe_allow_html=True)  
 
+    st.latex("""
+    P = N\\cdot \\frac{G}{G_{std}}\\cdot P_{pico}\\cdot\\left[1+k_{p}\\cdot (T_{c}-T_{r})\\right ]\\cdot\\eta\\cdot 10^{-3}
+    """)
 
-    # Agregar aca toda la explicación del funcionamiento del generador.
+    """
+    Donde:  
+    $ N $: Número de módulos fotovoltaicos.  
+    $ G $: Irradiancia global incidente en forma normal a los módulos $ W $/$ m^{2} $.  
+    $ G_{std} $: Irradiancia estándar, comúnmente en $ W $/$ m^{2} $.  
+    $ P_{pico} $: Potencia pico de cada módulo en $ W $.  
+    $ k_{p} $: Coeficiente de temperatura-potencia en $ °C^{-1} $.  
+    $ T_{c} $: Temperatura de la celda.  
+    $ T_{r} $: Temperatura de referencia ($ 25 °C $).  
+    $ \eta $: Rendimiento global del sistema.  
+    
+    **2. Corrección de temperatura de celda**
+  
+    La temperatura de la celda difiere de la temperatura ambiente $ T $. En la literatura se disponen decenas
+    de modelos matemáticos que permiten estimar $ T_{c} $  a partir de mediciones de $ T $. El modelo más sencillo,
+    válido únicamente en ausencia de viento, indica que la relación se puede aproximar según:  
+    """
 
-    st.subheader('Integrantes del grupo')
-    col1, col2, col3 = st.columns([0.35, 1/3, 1/3])
+    st.latex(""" T_{c}= T + 0.031\\left [ °C \\cdot m^{2}/W \\right ] \\cdot G""")
+
+    st.markdown(""" <div style='text-align: justify;'>
+    Se destaca, por otra parte, que las mediciones de irradiancia que se toman a partir de una estación
+    meteorológica, normalmente no coinciden con G, puesto que se realizan sobre una superficie de prueba
+    horizontal, y no en relación a la disposición real de los módulos. La obtención de G a partir de las mediciones
+    es compleja y depende, entre otras cosas, de las coordenadas geográficas del GFV (latitud y longitud), de
+    la disposición espacial de los módulos (incluidas las inclinaciones), del momento preciso de análisis (año,
+    mes, día, hora y zona horaria de implantación de la instalación), de la humedad relativa y temperatura del
+    ambiente, y de las características de lo que se encuentra en los alrededores, en relación a su capacidad para
+    reflejar en forma directa o difusa la radiación. No obstante, a los efectos de esta práctica, se
+    utilizarán mediciones de irradiancia asumiendo, por simplicidad, que sus valores corresponden a G.            
+    </div> """,unsafe_allow_html=True) 
+    """
+    
+    """
+    """  
+    **3. Límites de generación**  
+
+    Los circuitos inversores funcionan adecuadamente siempre que la producción, en términos de potencia,
+    supere un umbral mínimo $ \mu $, habitualmente expresado en forma porcentual, en relación a la potencia nominal
+    $ P_{inv} $ del equipo. Si este umbral no es superado, la instalación no entrega potencia eléctrica. Asimismo, el
+    valor $ P_{inv} $ (en kilo-Watt) opera como límite superior del GFV. En consecuencia, la potencia real $ P_{r} $ que
+    entrega la instalación se puede calcular como:   
+    """
+
+    st.latex("""P_{min} = \\cfrac{\\mu (\\%)}{100} \\cdot P_{inv}""")
+
+    st.latex("""\\begin{cases}
+    0 & \\text{si} \,\,P\\leq P_{min} \\\\
+    P & \\text{si}  \,\, P_{min}\\leq P_{inv} \\\\
+    P_{inv} & \\text{si} \,\, P> P_{inv} 
+    \end{cases} """)
+    
+    st.info('Para información acerca de la carga y extracción de datos, así como un glosario de términos, consulte la sección *Ayuda* del menú lateral.', icon="ℹ️")
+
+    st.subheader('Integrantes del equipo',divider='violet')
+    col1, col2, col3 = st.columns([0.33, 0.33, 0.33])
 
     with col1:
         with st.expander('**Santiago Ernesto Torres**', expanded=True, icon=":material/engineering:"):
-            # Agregar foto
+            
             st.markdown('*UTN - Facultad Regional Santa Fe*')
             st.markdown(':material/mail: storres@frsf.utn.edu.ar')
             st.markdown(':material/call: 342-516-1517')
+            st.image('Archivos//Imagenes//Diseño sin título.png', use_container_width=True)
 
     with col2:
         with st.expander('**Leandro Ruíz Díaz**', expanded=True, icon=":material/engineering:"):
-            # Agregar foto
+            
             st.markdown('*UTN - Facultad Regional Santa Fe*')
             st.markdown(':material/mail: lruizdiaz@frsf.utn.edu.ar')
             st.markdown(':material/call: 340-452-2507')
+            st.image('Archivos//Imagenes//FOTOLEO.png', use_container_width=True)
 
     with col3:
         with st.expander('**Manuel Garelik**', expanded=True, icon=":material/engineering:"):
-            # st.image('Archivos//Imagenes//FOTOMANU.png')
             st.markdown('*UTN - Facultad Regional Santa Fe*')
             st.markdown(':material/mail: magarelik@frsf.utn.edu.ar')
             st.markdown(':material/call: 342-554-7236')
+            st.image('Archivos//Imagenes//FOTOMANU.png', use_container_width=True)
 
 
 
@@ -427,23 +537,45 @@ if seccion == 'Estadísticas':
         st.write('La temperatura máxima fue de ', max(Datos['Temperatura (°C)']), '°C, el día ????')
         st.write('La irradiancia máxima fue de ', max(Datos['Irradiancia (W/m²)']), 'W/m², el día ????')
 
-if seccion == 'Mapas interactivos': 
-    st.header ('Mapas interactivos', divider='gray')
-    st.info(' Esta sección recopila la información geográfica cargada en la pestaña de *Datos*.', icon="ℹ️")
-    st.subheader("Mapa Satelital")
-    # mapa
-    mapa = folium.Map(location=[-31.616681297694267, -60.67543483706093], zoom_start=18)
-    # Las coordenadas de location indican el centro del mapa
 
-    #Ahora se hace el marcador puntual
-    folium.Marker(
-            [-31.616681297694267, -60.67543483706093], 
-            popup="Ubicación generador fotovoltaico",
-            tooltip="Facultad Regional Santa Fe - UTN"
-            ).add_to(mapa)
 
-    # Mostrar el mapa:
-    st_folium(mapa, width=725)
+if seccion == 'Mapas': 
+    st.title ('Mapas')
+    tab1, tab2, tab3 = st.tabs(['Mapa Satelital', 'Mapa de irradiancas', 'Mapa de temperaturas'])
+    with tab1: 
+        st.subheader("Mapa Satelital")
+        col1, col2 = st.columns([0.3, 0.7])
+        with col1:
+            st.image('Archivos\\Imagenes\\ubicacion2.jpg', use_container_width=True)
+            st.info('Cargue la ubicación del GFV analizado, si no ingresa ningún valor se mostrará la ubicación de los paneles de la UTN-FRSF', icon="ℹ️")
+            latitud = st.number_input('Latitud', min_value=-90.00000000000000, max_value=90.00000000000000, value=-31.616681297694267, format='%.14f', step=1.00000000000000)
+            longitud = st.number_input ('Longitud', min_value=-180.00000000000000, max_value=180.00000000000000, value=-60.67543483706093, format='%.14f', step=1.00000000000000)
+        with col2:
+            # mapa
+            mapa = folium.Map(location=[latitud, longitud], zoom_start=18)
+            # Las coordenadas de location indican el centro del mapa
+
+            #Ahora se hace el marcador puntual
+            folium.Marker(
+                    [latitud, longitud], 
+                    popup="Ubicación generador fotovoltaico",
+                    ).add_to(mapa)
+
+            # Mostrar el mapa:
+            st_folium(mapa, use_container_width=True)
+
+    with tab2: 
+       st.subheader("Mapa de irradiación del mundo", help='Obtenido de Global Solar Atlas, muestra la irradiación directa normal')
+       st.image('Archivos\\Imagenes\\mapa_irradiancia_mundo.png', use_container_width=True)
+       st.write('---')
+       st.subheader("Mapa de irradiación de Latinoamérica", help='Obtenido de Global Solar Atlas, muestra la irradiación directa normal')
+       st.image('Archivos\\Imagenes\\mapa_irradiancia_latinoamerica.png', use_container_width=True)
+       st.info('Para mapas de irradiación interactivos consultar *Global Solar Atlas* y *NASA POWER* (link en menú lateral)', icon="ℹ️")
+
+    with tab3: 
+        st.subheader("Mapa de temperaturas medias de Argentina", help='Obtenido de Servicio Meteorológico Nacional')
+        st.image('Archivos\\Imagenes\\111.jpg', use_container_width=True)
+        st.info('Para más mapas de temperatura consultar *Servicio Meteorológico Nacional* y *The Weather Channel* (link en menú lateral)', icon="ℹ️")
 
 
   
@@ -454,28 +586,143 @@ if seccion == 'Ayuda':
     with st.chat_message('assistant'):
             st.write('Hola! Escribí la opción sobre la que deseas obtener ayuda: ')
             """
-            1. *Guía de la página*  
-            2. *Carga y extracción de datos del generador*  
-            3. *Glosario de términos*  
-            4. *Preguntas frecuentes*  
-            5. *Otro*
+            1. *Guía de la página*    
+            2. *Definiciones y glosario de términos*  
+            3. *Preguntas frecuentes (FAQ's)*  
+            4. *Otro*
             """
     texto = st.chat_input("Escriba aquí...")
     if texto=='1':
         with st.chat_message('assistant'):
-            st.write('Descripción opción 1')
+            """
+            *Guía de la página*   
+            La página cuenta con cuatro secciones principales:
+            * ***Acerca de***, donde podrás encontrar una breve descripción de la página, 
+            información de los desarrolladores y la explicación del modelo matemático utilizado. 
+            * ***Generador***, es la sección principal y se encuentra, a su vez, subdividida en tres categorías,
+            "*Datos*", donde pueden cargarse los datos del generador que se desea calcular, o usar los datos por
+            defecto del generador de la FRSF-UTN; "*Estadísticas*", donde podrá encontrar valores representativos 
+            del generador, en las mismas fechas que las cargadas en Datos; y "*Mapas*", donde podrá visualizar 
+            una imagen satelital de la ubicación del generador, habiendo ingresado coordenadas de latitud y 
+            longitud, además de tener mapas estáticos de irradiancias y temperaturas de Argentina. 
+            * ***Ayuda***, sección en la que se haya actualmente.
+            * ***Feedback***, donde podrá encontrar un breve cuestionario acerca de su experiencia con la página,
+            lo que nos permitirá incorporar mejoras a futuro.
+
+            Si necesitas ver la ayuda de otra opción, ingresa el número debajo nuevamente!
+            """
+
 
     if texto=='2':
         with st.chat_message('assistant'):
-            st.write('Descripción opción 2')
-    #  HACER ASI PARA CADA OPCION DEL CHATBOT
+            """
+            *Definiciones generales*
+
+            * **GFV**: Generador Fotovoltaico. Un generador fotovoltaico es un sistema que convierte la energía del sol en electricidad.
+            Los generadores solares funcionan mediante paneles fotovoltaicos, también conocidos como paneles solares, que absorben la
+            luz del sol y la transforman en electricidad.
+
+            * **Inversor**: Un inversor fotovoltaico, también conocido como inversor solar, es un dispositivo que transforma la corriente
+            continua (CC) que generan los paneles solares en corriente alterna (CA), la cual es la utilizada en las instalaciones.
+
+            * **Regulador**: Un regulador de carga, también conocido como controlador de carga, es un dispositivo electrónico que se utiliza
+            en un sistema fotovoltaico para controlar el flujo de energía entre los paneles solares y las baterías.
+
+            *Glosario de términos*   
+            A continuación encontrarás una lista con las abreviaturas y una explicación más detallada de todos los
+            parámetros utilizados en el modelo matemático:  
+
+            * $ N $: es el número de paneles fotovoltaicos con los que cuenta el generador, tanto en serie como en paralelo.
+            Resulta de la multiplicación del número de módulos en serie por el número de módulos en paralelo o, de forma 
+            matemática: $ N = N_{serie} \\cdot N_{paralelo} $.
+
+            * $ G $: Irradiancia global incidente en forma normal a los módulos $ W $/$ m^{2} $. La irradiancia
+            mide el flujo de energía proveniente de la radiación solar (sea de forma directa o indirecta) por unidad
+            de superficie incidente.  
+
+            * $ G_{std} $: Irradiancia estándar, comúnmente en $ W $/$ m^{2} $. Es un valor de irradiancia que utilizan los
+            fabricantes de los módulos para referenciar ciertas características técnicas. Normalmente $ G_{std} = 1000 $ $ W $/$ m^{2} $.
+
+            * $ P_{pico} $: Potencia pico de cada módulo en $ W $. Se interpreta como la potencia eléctrica que entrega
+            un módulo cuando $ G $ coincide con $ G_{std} $ y cuando $ T_{c} $ coincide con $ T_{r} $, en ausencia de viento y sin
+            que el panel se vincule a otros componentes eléctricos que afecten el desempeño de la instalación.
+            Constituye la potencia nominal bajo la cual los módulos son comercializados. 
+
+            * $ k_{p} $: Coeficiente de temperatura-potencia en $ °C^{-1} $.Es un parámetro negativo que refleja cómo incide
+            la temperatura de la celda en el rendimiento del GFV. Se observa que incrementos (disminuciones)
+            de $ T_{c} $ producen, en consecuencia, disminuciones (incrementos) de $ P $.
+
+            * $ T_{c} $: Temperatura de la celda. Temperatura de la celda, en $ °C $. Es la temperatura de los componentes semiconductores que
+            conforman cada módulo fotovoltaico.
+
+            * $ T_{r} $: Temperatura de referencia, en Celsius. Es una temperatura utilizada por los fabricantes de los
+            módulos para referenciar ciertos parámetros que dependen de la temperatura. Normalmente $ Tr =( 25 °C ) $. 
+
+            * $ \eta $: Rendimiento global del sistema. Rendimiento global de la instalación “por unidad” (valor ideal: 1). Se utiliza para considerar el efecto
+            de sombras parciales sobre el GFV, suciedad sobre la superficie de los módulos y, fundamentalmente,
+            el rendimiento del equipo controlador-inversor. Los inversores contemplados por el modelo de la también incluyen el sistema de control para maximizar
+            la potencia de salida.
+
+            Si necesitas ver la ayuda de otra opción, ingresa el número debajo nuevamente!
+            """
+    
+
+    if texto=='3':
+       with st.chat_message('assistant'):
+            st.write('Descripción opción 3') 
+            """
+            Aquí encontrarás preguntas frecuentes que pueden ayudarte en la utilización de la app web: 
+            """
+            st.info('¿Puedo descargar los resultados de los cálculos y los gráficos?')
+            with st.expander ('Respuesta', icon=":material/add_circle:"): 
+                """
+                Sí! Puedes descargar los resultados y gráficos en el formato que desees, encuentra los botones de descargas
+                al final de cada análisis!
+                """
+
+            st.info('¿Qué sucede si ingreso datos incorrectos?')
+            with st.expander ('Respuesta', icon=":material/add_circle:"): 
+                """
+                La aplicación está desarrollada automaticamente para validar los datos que han sido cargados, si detecta valores
+                valores inconsistentes o fuera del rango que corresponde, se mostrará un mensaje de error con instrucciones para
+                corregirlo.
+                """
+
+            st.info('Puedo usar esta herramienta para un generador distinto al de la UTN-FRSF?')
+            with st.expander ('Respuesta', icon=":material/add_circle:"): 
+                """
+                Por supuesto! Si bien esta aplicación fue desarrollada incialmente para analizar los datos del GFV de la UTN - FRSF, 
+                puedes cargar los datos de cualquier generador **(siempre en el formato adecuado)** y extraer los resultados.
+                """
+
+            st.info('Que pasa si quiero analizar un período prolongado de datos?')
+            with st.expander ('Respuesta', icon=":material/add_circle:"): 
+                """
+                Podrás hacerlo, de todas formas la página te otorgorá advertencias, ya que no es recomendable debido a la disminución del
+                rendimiento y aumento en el tiempo de ejecución.
+                """
+    
+       """
+       Si necesitas ver la ayuda de otra opción, ingresa el número debajo nuevamente!
+       """
+    
+    if texto=='4':
+       with st.chat_message('assistant'):
+            """
+            Si todavía tienes dudas o inconvenientes con la página, te recomendamos realizar el formulario disponible en **Feedback** o contactar
+            alguna de las siguientes direcciones de correo electrónico:
+            """
+            st.markdown(':material/mail: setorres@frsf.utn.edu.ar')
+            st.markdown(':material/mail: magarelik@frsf.utn.edu.ar')
+            st.markdown(':material/mail: lruizdiaz@frsf.utn.edu.ar')
+
 
 
 if seccion == 'Feedback': 
     st.header ('Dejá tu comentario!', divider='blue')
     with st.form ('formulario', clear_on_submit=True):
         #  Datos del encuestado
-        st.text_input('Introduzca su nombre', placeholder='Juan Peréz')
+        st.text_input('Introduzca su nombre', placeholder='Nombre Apellido')
         st.text_input('Introduzca su correo electrónico', placeholder='correo@gmail.com')
         notificaciones = st.checkbox ('¿Desea recibir respuesta a su feedback y notificaciones sobre próximos cambios en la página?')
         st.write('---')
@@ -510,7 +757,6 @@ if seccion == 'Feedback':
             barra_progreso.empty()
 
             st.success(' Enviado con éxito!', icon="✅")
-
 
 
 
