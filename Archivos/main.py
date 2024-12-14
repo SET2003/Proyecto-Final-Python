@@ -89,7 +89,7 @@ with st.sidebar:
 
 if seccion == 'Acerca de':
     st.header('Acerca de esta aplicación', divider='grey')
-    # st.image('Archivos\\Imagenes\\png-transparent-black-solar-panel-submersible-pump-solar-power-solar-powered-pump-solar-energy-solar-panels-pin-panel-solar-street-light-thumbnail.png')
+    st.image('Archivos\\Imagenes\\banner_panelessolares.jpg', use_container_width=True)
     st.subheader('Descripción')
     """
     Esta aplicación, desarrollada como proyecto final en la asignatura "*Introducción a la programación
@@ -108,33 +108,37 @@ if seccion == 'Acerca de':
     * Utilizar sintaxis *Python* y la librería *Streamlit* para crear la aplicación web interactiva. 
     * Usar la librería *Pandas* para el manejo de *dataframes*. 
     """
-    st.subheader('¿Cómo funciona?')
+    st.subheader('¿Cómo funciona?', help='En este apartado se describen las ecuaciones utilizadas para realizar los cálculos del GFV')
+    """
+    1. **Estimación de potencia generada**
+    
+    """
 
     # Agregar aca toda la explicación del funcionamiento del generador.
 
     st.subheader('Integrantes del grupo')
-    col1, col2, col3 = st.columns ([0.35, 1/3, 1/3])
+    col1, col2, col3 = st.columns([0.35, 1/3, 1/3])
 
     with col1:
         with st.expander('**Santiago Ernesto Torres**', expanded=True, icon=":material/engineering:"):
             # Agregar foto
             st.markdown('*UTN - Facultad Regional Santa Fe*')
-            st.markdown (':material/mail: AGREGAR EMAIL')
-            st.markdown (':material/call: 342-554-7236')
+            st.markdown(':material/mail: storres@frsf.utn.edu.ar')
+            st.markdown(':material/call: 342-516-1517')
 
     with col2:
         with st.expander('**Leandro Ruíz Díaz**', expanded=True, icon=":material/engineering:"):
             # Agregar foto
             st.markdown('*UTN - Facultad Regional Santa Fe*')
-            st.markdown (':material/mail: AGREGAR EMAIL')
-            st.markdown (':material/call: 342-554-7236')
+            st.markdown(':material/mail: lruizdiaz@frsf.utn.edu.ar')
+            st.markdown(':material/call: 340-452-2507')
 
-    with col3: 
+    with col3:
         with st.expander('**Manuel Garelik**', expanded=True, icon=":material/engineering:"):
-            # Agregar foto
+            # st.image('Archivos//Imagenes//FOTOMANU.png')
             st.markdown('*UTN - Facultad Regional Santa Fe*')
-            st.markdown (':material/mail: magarelik@frsf.utn.edu.ar')
-            st.markdown (':material/call: 342-554-7236')
+            st.markdown(':material/mail: magarelik@frsf.utn.edu.ar')
+            st.markdown(':material/call: 342-554-7236')
 
 
 
