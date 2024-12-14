@@ -140,7 +140,7 @@ if seccion == 'Acerca de':
 
 if seccion == 'Datos':
     """
-    # Calculo Generador Fotovoltaico
+    # Cálculo Generador Fotovoltaico
     """
     # Le pido al usuario que cargue una tabla
     Datos = st.file_uploader(
@@ -210,27 +210,25 @@ if seccion == 'Datos':
         intervalos=intervalos[0]
         # Le pido al usuario que seleccione que datos quiere ver, de predeterminado muestra toda la tabla
         Fecha_inicial = st.date_input(
-            'Seleccione Fecha Inicial', value=Datos.index[0], min_value=Datos.index[0], max_value=Datos.index[-1], key='k').__str__()
-        if 'k' in st.session_state:
-            st.write('No eliminó la key')
-        else:
-            st.write('Se elimino la key')
+            'Seleccione Fecha Inicial', value=Datos.index[0], min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
         Fecha_final = st.date_input(
             'Seleccione Fecha Final', value=Datos.index[-1], min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
         Tiempo_inicial = st.time_input(
             'Tiempo inicial', datetime.time(0, 0), step=intervalos).__str__()
         Tiempo_final = st.time_input(
             'Tiempo final', datetime.time(23, 50), step=intervalos).__str__()
+        
+        st.session_state["Fecha_inicial"]=Fecha_inicial
+        st.session_state["Fecha_final"]=Fecha_final
+        
     with col1:
         # Junto en un solo string la fecha y hora seleccionada para pasarsela a la tabla
         Fecha_inicial_seleccionado = Fecha_inicial + ' ' + Tiempo_inicial
         Fecha_final_seleccionado = Fecha_final + ' ' + Tiempo_final
         # Agregué una variable donde están los datos filtrados por el usuario
         Datos_filtrados = Datos.loc[Fecha_inicial_seleccionado:Fecha_final_seleccionado, :]
-        
-        st.session_state["Datos_filtrados"]=Datos_filtrados
+       
         # Muestro la tabla
-        st.session_state["Fecha"]=Fecha_final
         Datos_filtrados
 
 #
@@ -303,16 +301,54 @@ if seccion == 'Datos':
 
 if seccion == 'Estadísticas':
     if 'Datos' not in st.session_state:
-        st.write('Ingrese los datos a través de la pestaña datos')
+        st.warning('⚠️ Ingrese los datos a través de la pestaña datos.')
     else:
-        st.header ('Estadísticas')   
-        Datos_filtrados=st.session_state["Datos_filtrados"]
-        Datos=st.session_state["Datos"]
-        Fecha=st.session_state["Fecha"].__str__()
-        Fecha=datetime.datetime.strptime(Fecha, '%Y-%m-%d')
-        Fecha_final = st.date_input(
-                'Seleccione Fecha Final', value=Fecha, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+        st.header ('Estadísticas')
+        st.write('### Gráfica de la Potencia Media')
+        #El usuario elige si quiere la media en días o semanas
+        option = st.selectbox(
+        "Seleccione un periodo de tiempo para el cálculo de la media:",
+        ("En semanas", "En días"),
+        )
 
+        Datos=st.session_state["Datos"]
+        Fecha_inicial = st.session_state["Fecha_inicial"]
+        Fecha_final = st.session_state["Fecha_final"]
+        Fecha_inicial=datetime.datetime.strptime(Fecha_inicial, '%Y-%m-%d')
+        Fecha_final=datetime.datetime.strptime(Fecha_final, '%Y-%m-%d')
+
+        col4, col5 = st.columns([0.7, 0.3])
+        with col5:
+            Fecha_inicial = st.date_input( 
+                'Seleccione Fecha inicial', value=Fecha_inicial, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+            Fecha_final = st.date_input(
+                'Seleccione Fecha Final', value=Fecha_final, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+        with col4:
+            chart_pot = Datos[(Datos.index >= Fecha_inicial) & (Datos.index <= Fecha_final)].drop(columns=['Temperatura (°C)', 'Irradiancia (W/m²)', 'Temperatura de Celda'], errors='ignore') #Filtro la tabla y le saco las columnas excedentes
+            if option == "En semanas" :
+                potencia_media = chart_pot.resample('W').mean() #Uso el resample para calcular la media
+                st.bar_chart(potencia_media)
+            if option == "En días" :
+                potencia_media = chart_pot.resample('D').mean() #Uso el resample para calcular la media
+                st.bar_chart(potencia_media)
+
+        st.write('### Días principales')
+
+        col6, col7 = st.columns([0.5, 0.5])
+        with col6:
+            #Ordeno las potencias de mayor a menor
+            Top_potencias = potencia_media.sort_values(by="Potencia", ascending = False).head(10)
+
+            st.write('Los diez (10) días con mayor potencia en el intervalo elegido son:')
+            st.write(Top_potencias)
+        with col7:
+            #ACÁ VA LO DE ENERGÍA
+            st.write('Los diez (10) días con mayor energía???? en el intervalo elegido son:')
+        
+        st.write('### Máximos y mínimos')
+
+        st.write('La temperatura máxima fue de ', max(Datos['Temperatura (°C)']), '°C, el día ????')
+        st.write('La irradiancia máxima fue de ', max(Datos['Irradiancia (W/m²)']), 'W/m², el día ????')
 
 if seccion == 'Mapas interactivos': 
     st.header ('Mapas interactivos', divider='gray')
