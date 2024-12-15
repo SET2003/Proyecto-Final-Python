@@ -22,6 +22,7 @@ import requests
 import folium
 import altair as alt
 
+
 # Configuración de la página
 
 st.set_page_config(
@@ -242,6 +243,7 @@ if seccion == 'Datos':
     st.info('Los datos ingresados en forma de tabla deben estar completos, respetando intervalos de tiempo constantes. Si no se ingresan, se realizará el cálculo con los datos climatológicos de Santa Fe de 2019.', icon="ℹ️")
 
     if datos_especificos:
+
         Datos = st.file_uploader(
         'Ingresá el archivo', help='Arrastra el archivo aquí o subelo mediante el botón', accept_multiple_files=False)
         Datos = pd.read_excel(Datos, index_col=0)
@@ -250,10 +252,8 @@ if seccion == 'Datos':
     # En caso de que el usuario no cargue ninguna tabla, se utiliza como ejemplo la del generador de la UTN-FRSF
         Datos = pd.read_excel(
             'Archivos\Datos_climatologicos_Santa_Fe_2019.xlsx', index_col=0)
-
-
-    st.session_state["Datos"]=Datos
     
+    st.session_state["Datos"]=Datos
     # Extraigo los indices de las columnas
     G, T = Datos.columns
 
@@ -282,7 +282,7 @@ if seccion == 'Datos':
                     Pinv = st.number_input(
                         'Potencia maxima/trabajo del inversor en $ kW $', min_value=0.00, value=2.50, step=0.50, format='%2.2f')
                     umbral_minimo = st.number_input(
-                        'Umbral minimo en %', min_value=0.00, value=0.00, max_value=1.00, step=0.10, format='%2.2f')
+                        'Umbral minimo en %', min_value=0.00, value=0.00, max_value=100.00, step=1.00, format='%2.2f')
                 
                 #  Configuración botón para entregar
                 entregado = st.form_submit_button ('Guardar datos', help='Presione aquí para enviar sus respuestas')
@@ -305,9 +305,9 @@ if seccion == 'Datos':
 
     # Calculo la potencia y la guardo en una nueva columna
     Datos['Potencia (kW)']= N*Datos[G]/Gstd*Ppico*(1+kp*(Tc-Tr))*rend*1e-3
-   
+
     # Analizo si los valores de potencia estan dentro de rango, de no ser así los reemplazo por el correspondiente
-    Pmin=umbral_minimo*Pinv
+    Pmin=umbral_minimo/100*Pinv
     Datos['Potencia (kW)'] = Datos['Potencia (kW)'].where(Datos['Potencia (kW)'] < Pinv, Pinv)
     Datos['Potencia (kW)'] = Datos['Potencia (kW)'].where(Datos['Potencia (kW)'] > Pmin, 0)
 
@@ -365,7 +365,7 @@ if seccion == 'Datos':
 
             Fecha_inicial = st.date_input(
                 'Seleccione Fecha Inicial', value=Fecha_inicial, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
-           
+        
             
             Fecha_final = st.date_input(
                 'Seleccione Fecha Final', value=Fecha_final, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
@@ -425,7 +425,7 @@ if seccion == 'Datos':
         Fecha_final_seleccionado = Fecha_final + ' ' + Tiempo_final.__str__()
         # Agregué una variable donde están los datos filtrados por el usuario
         Datos_filtrados = Datos.loc[Fecha_inicial_seleccionado:Fecha_final_seleccionado, :]
-       
+    
         # Muestro la tabla  
         st.dataframe(Datos_filtrados, use_container_width=True)
         
@@ -455,12 +455,12 @@ if seccion == 'Datos':
 
             st.markdown('### Gráfico de Potencia')
             st.line_chart(data=Datos_filtrados, y="Potencia (kW)",
-                          x_label='Fecha/Tiempo', y_label='Potencia (kW)')
+                        x_label='Fecha/Tiempo', y_label='Potencia (kW)')
 
         with tab2:
                 st.markdown('### Gráfico de Temperatura')
                 st.line_chart(data=Datos_filtrados, y=["Temperatura de Celda (°C)",T],
-                          x_label='Fecha/Tiempo', y_label='Temperatura (°C)')
+                        x_label='Fecha/Tiempo', y_label='Temperatura (°C)')
                 st.markdown('### Mapa de calor de Temperatura')
                 # st.pyplot(fig)
                 mapa_de_calor = Datos_filtrados.pivot_table(
@@ -489,7 +489,7 @@ if seccion == 'Datos':
             
             st.markdown('### Gráfico de Irradiancia')
             st.line_chart(data=Datos_filtrados, y=G, x_label='Fecha/Tiempo',
-                          y_label='Irradiancia (W/m²)', color="#ffc300")
+                        y_label='Irradiancia (W/m²)', color="#ffc300")
             
         with tab4:
 
@@ -499,14 +499,14 @@ if seccion == 'Datos':
 
 if seccion == 'Estadísticas':
     if 'Datos' not in st.session_state:
-        st.warning('⚠️ Ingrese los datos a través de la pestaña datos.')
+        st.warning('⚠️ Ingrese los datos a través de la pestaña "Datos".')
     else:
-        st.header ('Estadísticas')
-        st.write('### Gráfica de la Potencia Media')
-        #El usuario elige si quiere la media en días o semanas
+        st.title('Estadísticas')
+        st.header ('Gráficas', divider='blue')
+        #El usuario elige si quiere los datos en días o semanas
         option = st.selectbox(
-        "Seleccione un periodo de tiempo para el cálculo de la media:",
-        ("En semanas", "En días"),
+        "Seleccione el período de tiempo deseado",
+        ("Semanal", "Diario"),
         )
 
         Datos=st.session_state["Datos"]
@@ -517,23 +517,25 @@ if seccion == 'Estadísticas':
 
         col4, col5 = st.columns([0.7, 0.3])
         with col5:
+            st.write("")
+            st.write("")
             Fecha_inicial = st.date_input( 
-                'Seleccione Fecha inicial', value=Fecha_inicial, min_value=Datos.index[0], max_value=Datos.index[-1])
+                'Seleccione fecha inicial', value=Fecha_inicial, min_value=Datos.index[0], max_value=Datos.index[-1])
             Fecha_final = st.date_input(
-                'Seleccione Fecha Final', value=Fecha_final, min_value=Datos.index[0], max_value=Datos.index[-1])
+                'Seleccione fecha final', value=Fecha_final, min_value=Datos.index[0], max_value=Datos.index[-1])
             
             st.session_state["Fecha_inicial"]=Fecha_inicial.__str__()
             st.session_state["Fecha_final"]=Fecha_final.__str__()
 
         with col4:
-            tab1, tab2=st.tabs(['Potencia', 'Energia'])
+            tab1, tab2=st.tabs(['Gráficas de Potencia', 'Gráficas de Energía'])
             Fecha_inicial_seleccionado=Fecha_inicial.__str__()+ ' '+ datetime.time.fromisoformat('00:00:00').__str__()
             Fecha_final_seleccionado=Fecha_final.__str__()+ ' '+ datetime.time.fromisoformat('23:59:59').__str__()
             
             chart_pot = Datos[(Datos.index >= Fecha_inicial.__str__()) & (Datos.index <= Fecha_final_seleccionado.__str__())].drop(columns=['Temperatura (°C)', 'Irradiancia (W/m²)', 'Temperatura de Celda'], errors='ignore') #Filtro la tabla y le saco las columnas excedentes
             
             with tab1:
-                if option == "En semanas" :
+                if option == "Semanal" :
                     
                     potencia_media_SE = chart_pot.resample('W').mean() #Uso el resample para calcular tomar las semanas y el mean para calcular la media
                     
@@ -544,12 +546,12 @@ if seccion == 'Estadísticas':
                     
                     grafico=alt.Chart(potencia_media).mark_bar().encode(
                         x=alt.X("Fecha Formateada:O", title="Fecha"),
-                        y=alt.Y("Potencia:Q", title="Potencia"),
+                        y=alt.Y("Potencia (kW):Q"),
                     ).interactive()
 
                     st.altair_chart(grafico, use_container_width=True)
 
-                if option == "En días" :
+                if option == "Diario" :
                     potencia_media_SE = chart_pot.resample('D').mean() #Uso el resample para calcular tomar los dias y el mean para calcular la media
                     
                     potencia_media = potencia_media_SE.reset_index()
@@ -557,85 +559,94 @@ if seccion == 'Estadísticas':
                     
                     grafico=alt.Chart(potencia_media).mark_bar().encode(
                         x=alt.X("Fecha Formateada:O", title="Fecha"),
-                        y=alt.Y("Potencia:Q", title="Potencia"),
+                        y=alt.Y("Potencia (kW):Q"),
                     ).interactive()
 
                     st.altair_chart(grafico, use_container_width=True)
 
             with tab2:
-                if option == "En semanas" :
+                if option == "Semanal" :
                     
                     Energia_SE = chart_pot.resample('W').mean() #Uso el resample para calcular tomar las semanas y el mean para calcular la media
-                    Energia_SE['Potencia']=Energia_SE['Potencia']*168
+                    Energia_SE['Potencia (kW)']=Energia_SE['Potencia (kW)']*168
 
                     Energia=Energia_SE.reset_index()
                     Energia["Fecha Formateada"]=Energia["Fecha"].dt.strftime("%Y-%m-%d")
                     
                     # lista=potencia_media['Fecha Formateada'].values.tolist()
                     
-                    grafico=alt.Chart(Energia).mark_bar().encode(
+                    grafico=alt.Chart(Energia).mark_bar(color="yellowgreen").encode(
                         x=alt.X("Fecha Formateada:O", title="Fecha"),
-                        y=alt.Y("Potencia:Q", title="Energia"),
+                        y=alt.Y("Potencia (kW):Q", title="Energía (kWh)"),
                     ).interactive()
 
                     st.altair_chart(grafico, use_container_width=True)
 
-                if option == "En días" :
+                if option == "Diario" :
                     
                     Energia_SE = chart_pot.resample('D').mean() #Uso el resample para calcular tomar los dias y el mean para calcular la media
-                    Energia_SE['Potencia']=Energia_SE['Potencia']*24
+                    Energia_SE['Potencia (kW)']=Energia_SE['Potencia (kW)']*24
                     Energia = Energia_SE.reset_index()
                     Energia["Fecha Formateada"]=Energia["Fecha"].dt.strftime("%Y-%m-%d")
                     
 
-                    grafico=alt.Chart(Energia).mark_bar().encode(
+                    grafico=alt.Chart(Energia).mark_bar(color="yellowgreen").encode(
                         x=alt.X("Fecha Formateada:O", title="Fecha"),
-                        y=alt.Y("Potencia:Q", title="Energia"),
+                        y=alt.Y("Potencia (kW):Q", title='Energía (kWh)'),
                     ).interactive()
 
                     st.altair_chart(grafico, use_container_width=True)
        
-        st.write('### Días principales')
+        #
+        # Todo sobre Datos caracteristicos
+        #
 
-        col6, col7 = st.columns([0.5, 0.5])
+        st.header('Datos característicos', divider='red')
+
+        col6, col7 = st.columns([0.5, 0.5], gap='large')
         Energia=Energia.set_index('Fecha Formateada')
-        C1E, C2E = Energia.columns
-        Energia=Energia.drop(C1E,axis=1)
+        C1E, C2E, C3E = Energia.columns
+        Energia=Energia.drop(C1E,axis=1).drop(C2E, axis=1)
         potencia_media=potencia_media.set_index('Fecha Formateada')
-        C1P, C2P=potencia_media.columns
-        potencia_media=potencia_media.drop(C1P, axis=1)
+        C1P, C2P, C3P=potencia_media.columns
+        potencia_media=potencia_media.drop(C1P, axis=1).drop(C2P, axis=1)
         with col6:
             #Ordeno las potencias de mayor a menor
-            if option =="En días" :
+            st.markdown("### Potencia")
+            if option =="Diario" :
                 
-                Top_potencias = potencia_media.sort_values(by="Potencia", ascending = False).head(10)
-                st.write('Los diez (10) días con mayor potencia en el intervalo elegido son:')
-                st.write(Top_potencias)
+                Top_potencias = potencia_media.sort_values(by="Potencia (kW)", ascending = False).head(10)
+                st.write('Días de mayor Potencia obtenida')
+                Nombres_col={'Fecha Formateada': 'Fecha', 'Potencia (kW)':'Potencia (KW)'}
+                st.dataframe(Top_potencias,column_config=Nombres_col, use_container_width=True)
                 
-            if option == "En semanas" :
+            if option == "Semanal" :
                 
-                Top_potencias = potencia_media.sort_values(by="Potencia", ascending = False).head(10)
-                st.write('Las diez (10) semanas con mayor potencia en el intervalo elegido son:')
-                st.write(Top_potencias)
+                Top_potencias = potencia_media.sort_values(by="Potencia (kW)", ascending = False).head(10)
+                st.write('Semanas de mayor Potencia obtenida')
+                Nombres_col={'Fecha Formateada': 'Fecha', 'Potencia (kW)':'Potencia [KW]'}
+                st.dataframe(Top_potencias, column_config=Nombres_col, use_container_width=True)
 
         with col7:
             #ACÁ VA LO DE ENERGÍA
-            
-            if option =="En días" :
+            st.markdown("### Energía")
+            if option =="Diario" :
                 
-                Top_Energia=Energia.sort_values(by="Potencia", ascending = False).head(10)
-                st.write('Los diez (10) días con mayor energia en el intervalo elegido son:')
-                st.write(Top_Energia)
+                Top_Energia=Energia.sort_values(by="Potencia (kW)", ascending = False).head(10)
+                st.markdown('Días de mayor Energía obtenida')
+                Nombres_col={'Fecha Formateada': 'Fecha', 'Potencia (kW)':'Energía (kWh)'}
+                st.dataframe(Top_Energia, column_config=Nombres_col, use_container_width=True)
 
-            if option == "En semanas" :
+            if option == "Semanal" :
                 
-                Top_Energia=Energia.sort_values(by="Potencia", ascending = False).head(10)
-                st.write('Las diez (10) semanas con mayor energia en el intervalo elegido son:')
-                st.write(Top_Energia)
+                Top_Energia=Energia.sort_values(by="Potencia (kW)", ascending = False).head(10)
+                st.write('Semanas de mayor Energía obtenida')
+                Nombres_col={'Fecha Formateada': 'Fecha', 'Potencia (kW)':'Energía (kWh)'}
+                st.dataframe(Top_Energia,column_config=Nombres_col, use_container_width=True)
 
-        
+        st.write("---")
         st.write('### Máximos y mínimos')
-
+        
         st.write('La temperatura máxima fue de ', Datos['Temperatura (°C)'].max(), '°C, el día ', Datos['Temperatura (°C)'].idxmax())
         st.write('La irradiancia máxima fue de ', Datos['Irradiancia (W/m²)'].max(), 'W/m², el día ', Datos['Irradiancia (W/m²)'].idxmax())
 
