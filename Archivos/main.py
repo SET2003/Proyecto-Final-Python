@@ -234,29 +234,33 @@ if seccion == 'Acerca de':
 
 
 if seccion == 'Datos':
-    st.title ('Cálculo Generador Fotovoltaico')
+    st.title ('Cálculo generador fotovoltaico')
     # Le pido al usuario que cargue una tabla
     st.header ('Carga de datos climatológicos', divider='blue')
-    st.subheader ('Generador específico')
-    Datos = st.file_uploader(
-        'Ingresá el archivo', help='Arrastra el archivo aquí o subelo mediante el botón', accept_multiple_files=False)
 
-    # En caso de que el usuario no cargue ninguna tabla, se utiliza como ejemplo la proporcionada por UTN
-    if Datos is None:
-        st.subheader('Ejemplo con tabla de datos climatologicos de Santa Fe 2019')
-        Datos = pd.read_excel(
-            'Archivos\Datos_climatologicos_Santa_Fe_2019.xlsx', index_col=0)
-    else:
+    datos_especificos = st.toggle ('Cargar nueva tabla')
+    st.info('Los datos ingresados en forma de tabla deben estar completos, respetando intervalos de tiempo constantes. Si no se ingresan, se realizará el cálculo con los datos climatológicos de Santa Fe de 2019.', icon="ℹ️")
+
+    if datos_especificos:
+        Datos = st.file_uploader(
+        'Ingresá el archivo', help='Arrastra el archivo aquí o subelo mediante el botón', accept_multiple_files=False)
         Datos = pd.read_excel(Datos, index_col=0)
 
+    else:
+    # En caso de que el usuario no cargue ninguna tabla, se utiliza como ejemplo la del generador de la UTN-FRSF
+        Datos = pd.read_excel(
+            'Archivos\Datos_climatologicos_Santa_Fe_2019.xlsx', index_col=0)
+
+
     st.session_state["Datos"]=Datos
+    
     # Extraigo los indices de las columnas
     G, T = Datos.columns
 
     # Todos los datos que tiene que cargar el usuario, utiliza como predeterminados los de la UTN
 
-    st.header ('Datos de la Instalación', divider='red')
-    with st.expander('**Datos**', expanded=False):
+    st.header ('Datos de la instalación', divider='red')
+    with st.expander('**Datos**', expanded=False, icon=":material/description:"):
             with st.form ('formulario', clear_on_submit=True, border=False):
                 col1, col2 = st.columns(2)
                 with col1:
@@ -265,20 +269,20 @@ if seccion == 'Datos':
                     # st.markdown('Gstd Irradiancia estándar en $\cfrac {W}{m^2}$')
                     Gstd = st.number_input(
                         'Gstd Irradiancia estándar en $ W $/$ {m^2} $', min_value=0.00, value=1000.00, step=100.00, format='%2.2f')
-                    Tr = st.number_input('Temperatura de referencia',
+                    Tr = st.number_input('Temperatura de referencia en $ °C $',
                                         min_value=0.00, value=25.0, step=0.5, format='%1.1f')
                     Ppico = st.number_input(
-                        'Potencia Pico de cada modulo [W]', min_value=0.00, value=240.00, step=10.00, format='%2.2f')
+                        'Potencia Pico de cada modulo en $ W $', min_value=0.00, value=240.00, step=10.00, format='%2.2f')
 
                 with col2:
-                    kp = st.number_input('Coeficiente de Temperatura-Potencia',
+                    kp = st.number_input('Coeficiente de Temperatura-Potencia en $ °C^{-1} $',
                                         max_value=0.0000, value=-0.0044, step=0.0001, format='%4.4f')
                     rend = st.number_input('Rendimiento global de la instalación',
                                         min_value=0.00, max_value=1.00, value=0.97, step=0.10, format='%2.2f')
                     Pinv = st.number_input(
-                        'Potencia maxima/trabajo del inversor [Kw]', min_value=0.00, value=2.50, step=0.50, format='%2.2f')
+                        'Potencia maxima/trabajo del inversor en $ kW $', min_value=0.00, value=2.50, step=0.50, format='%2.2f')
                     umbral_minimo = st.number_input(
-                        'Umbral minimo', min_value=0.00, value=0.00, max_value=1.00, step=0.10, format='%2.2f')
+                        'Umbral minimo en %', min_value=0.00, value=0.00, max_value=1.00, step=0.10, format='%2.2f')
                 
                 #  Configuración botón para entregar
                 entregado = st.form_submit_button ('Guardar datos', help='Presione aquí para enviar sus respuestas')
@@ -296,16 +300,16 @@ if seccion == 'Datos':
                     st.success(' Datos guardados', icon="✅")
     
     # Corrijo la temperatura de celda en funcion a la temperatura ambiente
-    Datos['Temperatura de Celda']= Datos[T] + 0.031*Datos[G]
-    Tc=Datos['Temperatura de Celda']
+    Datos['Temperatura de Celda (°C)']= Datos[T] + 0.031*Datos[G]
+    Tc=Datos['Temperatura de Celda (°C)']
 
     # Calculo la potencia y la guardo en una nueva columna
-    Datos['Potencia']= N*Datos[G]/Gstd*Ppico*(1+kp*(Tc-Tr))*rend*1e-3
+    Datos['Potencia (kW)']= N*Datos[G]/Gstd*Ppico*(1+kp*(Tc-Tr))*rend*1e-3
    
     # Analizo si los valores de potencia estan dentro de rango, de no ser así los reemplazo por el correspondiente
     Pmin=umbral_minimo*Pinv
-    Datos['Potencia'] = Datos['Potencia'].where(Datos['Potencia'] < Pinv, Pinv)
-    Datos['Potencia'] = Datos['Potencia'].where(Datos['Potencia'] > Pmin, 0)
+    Datos['Potencia (kW)'] = Datos['Potencia (kW)'].where(Datos['Potencia (kW)'] < Pinv, Pinv)
+    Datos['Potencia (kW)'] = Datos['Potencia (kW)'].where(Datos['Potencia (kW)'] > Pmin, 0)
 
     # Muestro la Tabla (de aca a proximas lineas)
     st.markdown('## Tabla Cargada')
@@ -435,7 +439,7 @@ if seccion == 'Datos':
     
     if len(Datos_filtrados) > 10000:
         st.warning(
-            "El rango seleccionado contiene demasiados datos para graficar. Reduce el rango para mejorar el rendimiento")
+            "El rango seleccionado contiene demasiados datos para graficar. Se recomienda reducir el rango para mejorar el rendimiento del programa.", icon="⚠️")
         Limite_puntos=st.toggle('Deshabilitar limite de datos', value=False)
     else:
         Limite_puntos=True
@@ -450,12 +454,12 @@ if seccion == 'Datos':
         with tab1:
 
             st.markdown('### Gráfico de Potencia')
-            st.line_chart(data=Datos_filtrados, y="Potencia",
-                          x_label='Fecha/Tiempo', y_label='Potencia')
+            st.line_chart(data=Datos_filtrados, y="Potencia (kW)",
+                          x_label='Fecha/Tiempo', y_label='Potencia (kW)')
 
         with tab2:
                 st.markdown('### Gráfico de Temperatura')
-                st.line_chart(data=Datos_filtrados, y=["Temperatura de Celda",T],
+                st.line_chart(data=Datos_filtrados, y=["Temperatura de Celda (°C)",T],
                           x_label='Fecha/Tiempo', y_label='Temperatura (°C)')
                 st.markdown('### Mapa de calor de Temperatura')
                 # st.pyplot(fig)
