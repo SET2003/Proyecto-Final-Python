@@ -8,6 +8,7 @@ Cosas obligatorias:
 
 """
 # Librerias que se utilizan o pueden llegar a ser necesarias
+import datetime
 from datetime import datetime as dt
 import numpy as np
 import streamlit as st
@@ -521,43 +522,118 @@ if seccion == 'Estadísticas':
             st.session_state["Fecha_final"]=Fecha_final.__str__()
 
         with col4:
-            # a=dt.time(23,59,0).__str__()
-            # Fecha_inicial_seleccionado=Fecha_inicial.__str__()+ ' '+ dt.time(23,59,0).__str__()
-            # Fecha_inicial_seleccionado
-            # Fecha_final_seleccionado=Fecha_final.__str__()+ ' '+ dt.time(23,59).__str__()
+            tab1, tab2=st.tabs(['Potencia', 'Energia'])
+            Fecha_inicial_seleccionado=Fecha_inicial.__str__()+ ' '+ datetime.time.fromisoformat('00:00:00').__str__()
+            Fecha_final_seleccionado=Fecha_final.__str__()+ ' '+ datetime.time.fromisoformat('23:59:59').__str__()
             
-            chart_pot = Datos[(Datos.index >= Fecha_inicial.__str__()) & (Datos.index <= (pd.to_datetime(Fecha_final) + pd.Timedelta(days=1)))].drop(columns=['Temperatura (°C)', 'Irradiancia (W/m²)', 'Temperatura de Celda'], errors='ignore') #Filtro la tabla y le saco las columnas excedentes
-            chart_pot
-            if option == "En semanas" :
-                potencia_media = chart_pot.resample('W').mean() #Uso el resample para calcular la media
-                st.bar_chart(potencia_media)
-                
-                chart_pot.resample('W').last()
+            chart_pot = Datos[(Datos.index >= Fecha_inicial.__str__()) & (Datos.index <= Fecha_final_seleccionado.__str__())].drop(columns=['Temperatura (°C)', 'Irradiancia (W/m²)', 'Temperatura de Celda'], errors='ignore') #Filtro la tabla y le saco las columnas excedentes
+            
+            with tab1:
+                if option == "En semanas" :
+                    
+                    potencia_media_SE = chart_pot.resample('W').mean() #Uso el resample para calcular tomar las semanas y el mean para calcular la media
+                    
+                    potencia_media=potencia_media_SE.reset_index()
+                    potencia_media["Fecha Formateada"]=potencia_media["Fecha"].dt.strftime("%Y-%m-%d")
+                    
+                    # lista=potencia_media['Fecha Formateada'].values.tolist()
+                    
+                    grafico=alt.Chart(potencia_media).mark_bar().encode(
+                        x=alt.X("Fecha Formateada:O", title="Fecha"),
+                        y=alt.Y("Potencia:Q", title="Potencia"),
+                    ).interactive()
 
-            if option == "En días" :
-                potencia_media = chart_pot.resample('D').mean() #Uso el resample para calcular la media
-                st.bar_chart(potencia_media)
+                    st.altair_chart(grafico, use_container_width=True)
 
-        # Fecha_inicial_seleccionado = Fecha_inicial + ' ' + Tiempo_inicial.__str__()
-        # Fecha_final_seleccionado = Fecha_final + ' ' + Tiempo_final.__str__()
+                if option == "En días" :
+                    potencia_media_SE = chart_pot.resample('D').mean() #Uso el resample para calcular tomar los dias y el mean para calcular la media
+                    
+                    potencia_media = potencia_media_SE.reset_index()
+                    potencia_media["Fecha Formateada"]=potencia_media["Fecha"].dt.strftime("%Y-%m-%d")
+                    
+                    grafico=alt.Chart(potencia_media).mark_bar().encode(
+                        x=alt.X("Fecha Formateada:O", title="Fecha"),
+                        y=alt.Y("Potencia:Q", title="Potencia"),
+                    ).interactive()
+
+                    st.altair_chart(grafico, use_container_width=True)
+
+            with tab2:
+                if option == "En semanas" :
+                    
+                    Energia_SE = chart_pot.resample('W').mean() #Uso el resample para calcular tomar las semanas y el mean para calcular la media
+                    Energia_SE['Potencia']=Energia_SE['Potencia']*168
+
+                    Energia=Energia_SE.reset_index()
+                    Energia["Fecha Formateada"]=Energia["Fecha"].dt.strftime("%Y-%m-%d")
+                    
+                    # lista=potencia_media['Fecha Formateada'].values.tolist()
+                    
+                    grafico=alt.Chart(Energia).mark_bar().encode(
+                        x=alt.X("Fecha Formateada:O", title="Fecha"),
+                        y=alt.Y("Potencia:Q", title="Energia"),
+                    ).interactive()
+
+                    st.altair_chart(grafico, use_container_width=True)
+
+                if option == "En días" :
+                    
+                    Energia_SE = chart_pot.resample('D').mean() #Uso el resample para calcular tomar los dias y el mean para calcular la media
+                    Energia_SE['Potencia']=Energia_SE['Potencia']*24
+                    Energia = Energia_SE.reset_index()
+                    Energia["Fecha Formateada"]=Energia["Fecha"].dt.strftime("%Y-%m-%d")
+                    
+
+                    grafico=alt.Chart(Energia).mark_bar().encode(
+                        x=alt.X("Fecha Formateada:O", title="Fecha"),
+                        y=alt.Y("Potencia:Q", title="Energia"),
+                    ).interactive()
+
+                    st.altair_chart(grafico, use_container_width=True)
        
         st.write('### Días principales')
 
         col6, col7 = st.columns([0.5, 0.5])
+        Energia=Energia.set_index('Fecha Formateada')
+        C1E, C2E = Energia.columns
+        Energia=Energia.drop(C1E,axis=1)
+        potencia_media=potencia_media.set_index('Fecha Formateada')
+        C1P, C2P=potencia_media.columns
+        potencia_media=potencia_media.drop(C1P, axis=1)
         with col6:
             #Ordeno las potencias de mayor a menor
-            Top_potencias = potencia_media.sort_values(by="Potencia", ascending = False).head(10)
+            if option =="En días" :
+                
+                Top_potencias = potencia_media.sort_values(by="Potencia", ascending = False).head(10)
+                st.write('Los diez (10) días con mayor potencia en el intervalo elegido son:')
+                st.write(Top_potencias)
+                
+            if option == "En semanas" :
+                
+                Top_potencias = potencia_media.sort_values(by="Potencia", ascending = False).head(10)
+                st.write('Las diez (10) semanas con mayor potencia en el intervalo elegido son:')
+                st.write(Top_potencias)
 
-            st.write('Los diez (10) días con mayor potencia en el intervalo elegido son:')
-            st.write(Top_potencias)
         with col7:
             #ACÁ VA LO DE ENERGÍA
-            st.write('Los diez (10) días con mayor energía???? en el intervalo elegido son:')
+            
+            if option =="En días" :
+                
+                Top_Energia=Energia.sort_values(by="Potencia", ascending = False).head(10)
+                st.write('Los diez (10) días con mayor energia en el intervalo elegido son:')
+                st.write(Top_Energia)
+
+            if option == "En semanas" :
+                
+                Top_Energia=Energia.sort_values(by="Potencia", ascending = False).head(10)
+                st.write('Las diez (10) semanas con mayor energia en el intervalo elegido son:')
+                st.write(Top_Energia)
+
         
         st.write('### Máximos y mínimos')
 
-        st.write('La temperatura máxima fue de ', max(Datos['Temperatura (°C)']), '°C, el día ????')
-        st.write('La irradiancia máxima fue de ', max(Datos['Irradiancia (W/m²)']), 'W/m², el día ????')
+        st.write('La temperatura máxima fue de ', Datos['Temperatura (°C)'].max(), '°C, el día ', Datos['Temperatura (°C)'].idxmax())
+        st.write('La irradiancia máxima fue de ', Datos['Irradiancia (W/m²)'].max(), 'W/m², el día ', Datos['Irradiancia (W/m²)'].idxmax())
 
 
 
