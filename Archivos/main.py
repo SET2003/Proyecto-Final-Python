@@ -233,17 +233,16 @@ if seccion == 'Acerca de':
 
 
 if seccion == 'Datos':
-    """
-    # Cálculo Generador Fotovoltaico
-    """
+    st.title ('Cálculo Generador Fotovoltaico')
     # Le pido al usuario que cargue una tabla
+    st.header ('Carga de datos climatológicos', divider='blue')
+    st.subheader ('Generador específico')
     Datos = st.file_uploader(
-        'Ingresá el archivo', help='Arrastrá el archivo acá o subilo mediante el botón', accept_multiple_files=False)
+        'Ingresá el archivo', help='Arrastra el archivo aquí o subelo mediante el botón', accept_multiple_files=False)
 
     # En caso de que el usuario no cargue ninguna tabla, se utiliza como ejemplo la proporcionada por UTN
     if Datos is None:
-        st.markdown(
-            "## Ejemplo con Tabla de Datos Climatologicos de Santa Fe 2019")
+        st.subheader('Ejemplo con tabla de datos climatologicos de Santa Fe 2019')
         Datos = pd.read_excel(
             'Archivos\Datos_climatologicos_Santa_Fe_2019.xlsx', index_col=0)
     else:
@@ -255,31 +254,46 @@ if seccion == 'Datos':
 
     # Todos los datos que tiene que cargar el usuario, utiliza como predeterminados los de la UTN
 
-    st.markdown("### Datos de la Instalación")
-    with st.expander("## Datos"):
+    st.header ('Datos de la Instalación', divider='red')
+    with st.expander('**Datos**', expanded=False):
+            with st.form ('formulario', clear_on_submit=True, border=False):
+                col1, col2 = st.columns(2)
+                with col1:
+                    N = st.number_input('Cantidad de Paneles',
+                                        min_value=0, value=12, step=1)
+                    # st.markdown('Gstd Irradiancia estándar en $\cfrac {W}{m^2}$')
+                    Gstd = st.number_input(
+                        'Gstd Irradiancia estándar en $ W $/$ {m^2} $', min_value=0.00, value=1000.00, step=100.00, format='%2.2f')
+                    Tr = st.number_input('Temperatura de referencia',
+                                        min_value=0.00, value=25.0, step=0.5, format='%1.1f')
+                    Ppico = st.number_input(
+                        'Potencia Pico de cada modulo [W]', min_value=0.00, value=240.00, step=10.00, format='%2.2f')
 
-        col1, col2 = st.columns(2)
-        with col1:
-            N = st.number_input('Cantidad de Paneles',
-                                min_value=0, value=12, step=1)
-            # st.markdown('Gstd Irradiancia estándar en $\cfrac {W}{m^2}$')
-            Gstd = st.number_input(
-                'Gstd Irradiancia estándar en $\cfrac {W}{m^2}$', min_value=0.00, value=1000.00, step=100.00, format='%2.2f')
-            Tr = st.number_input('Temperatura de referencia',
-                                min_value=0.00, value=25.0, step=0.5, format='%1.1f')
-            Ppico = st.number_input(
-                'Potencia Pico de cada modulo [W]', min_value=0.00, value=240.00, step=10.00, format='%2.2f')
+                with col2:
+                    kp = st.number_input('Coeficiente de Temperatura-Potencia',
+                                        max_value=0.0000, value=-0.0044, step=0.0001, format='%4.4f')
+                    rend = st.number_input('Rendimiento global de la instalación',
+                                        min_value=0.00, max_value=1.00, value=0.97, step=0.10, format='%2.2f')
+                    Pinv = st.number_input(
+                        'Potencia maxima/trabajo del inversor [Kw]', min_value=0.00, value=2.50, step=0.50, format='%2.2f')
+                    umbral_minimo = st.number_input(
+                        'Umbral minimo', min_value=0.00, value=0.00, max_value=1.00, step=0.10, format='%2.2f')
+                
+                #  Configuración botón para entregar
+                entregado = st.form_submit_button ('Guardar datos', help='Presione aquí para enviar sus respuestas')
+                if entregado: 
+                    #Barra de carga
+                    mensaje_progreso = "Cargando..."
+                    barra_progreso = st.progress(0, text=mensaje_progreso)
 
-        with col2:
-            kp = st.number_input('Coeficiente de Temperatura-Potencia',
-                                max_value=0.0000, value=-0.0044, step=0.0001, format='%4.4f')
-            rend = st.number_input('Rendimiento global de la instalación',
-                                min_value=0.00, max_value=1.00, value=0.97, step=0.10, format='%2.2f')
-            Pinv = st.number_input(
-                'Potencia maxima/trabajo del inversor [Kw]', min_value=0.00, value=2.50, step=0.50, format='%2.2f')
-            umbral_minimo = st.number_input(
-                'Umbral minimo', min_value=0.00, value=0.00, max_value=1.00, step=0.10, format='%2.2f')
+                    for porcentaje_completado in range(100):
+                        time.sleep(0.001)
+                        barra_progreso.progress(porcentaje_completado + 1, text=mensaje_progreso)
+                    time.sleep(3)
+                    barra_progreso.empty()
 
+                    st.success(' Datos guardados', icon="✅")
+    
     # Corrijo la temperatura de celda en funcion a la temperatura ambiente
     Datos['Temperatura de Celda']= Datos[T] + 0.031*Datos[G]
     Tc=Datos['Temperatura de Celda']
@@ -407,8 +421,8 @@ if seccion == 'Datos':
         # Agregué una variable donde están los datos filtrados por el usuario
         Datos_filtrados = Datos.loc[Fecha_inicial_seleccionado:Fecha_final_seleccionado, :]
        
-        # Muestro la tabla
-        Datos_filtrados
+        # Muestro la tabla  
+        st.dataframe(Datos_filtrados, use_container_width=True)
         
 #
 #
@@ -720,7 +734,7 @@ if seccion == 'Ayuda':
             Si todavía tienes dudas o inconvenientes con la página, te recomendamos realizar el formulario disponible en **Feedback** o contactar
             alguna de las siguientes direcciones de correo electrónico:
             """
-            st.markdown(':material/mail: setorres@frsf.utn.edu.ar')
+            st.markdown(':material/mail: storres@frsf.utn.edu.ar')
             st.markdown(':material/mail: magarelik@frsf.utn.edu.ar')
             st.markdown(':material/mail: lruizdiaz@frsf.utn.edu.ar')
 
@@ -765,6 +779,5 @@ if seccion == 'Feedback':
             barra_progreso.empty()
 
             st.success(' Enviado con éxito!', icon="✅")
-
 
 
