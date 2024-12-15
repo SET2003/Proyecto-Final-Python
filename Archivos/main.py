@@ -277,8 +277,8 @@ if seccion == 'Datos':
                                 min_value=0.00, max_value=1.00, value=0.97, step=0.10, format='%2.2f')
             Pinv = st.number_input(
                 'Potencia maxima/trabajo del inversor [Kw]', min_value=0.00, value=2.50, step=0.50, format='%2.2f')
-            Pmininv = st.number_input(
-                'Potencia minima del inversor [Kw]', min_value=0.00, value=0.00, max_value=Pinv, step=0.50, format='%2.2f')
+            umbral_minimo = st.number_input(
+                'Umbral minimo', min_value=0.00, value=0.00, max_value=1.00, step=0.10, format='%2.2f')
 
     # Corrijo la temperatura de celda en funcion a la temperatura ambiente
     Datos['Temperatura de Celda']= Datos[T] + 0.031*Datos[G]
@@ -288,8 +288,9 @@ if seccion == 'Datos':
     Datos['Potencia']= N*Datos[G]/Gstd*Ppico*(1+kp*(Tc-Tr))*rend*1e-3
    
     # Analizo si los valores de potencia estan dentro de rango, de no ser así los reemplazo por el correspondiente
+    Pmin=umbral_minimo*Pinv
     Datos['Potencia'] = Datos['Potencia'].where(Datos['Potencia'] < Pinv, Pinv)
-    Datos['Potencia'] = Datos['Potencia'].where(Datos['Potencia'] > Pmininv, 0)
+    Datos['Potencia'] = Datos['Potencia'].where(Datos['Potencia'] > Pmin, 0)
 
     # Muestro la Tabla (de aca a proximas lineas)
     st.markdown('## Tabla Cargada')
@@ -498,26 +499,33 @@ if seccion == 'Estadísticas':
         col4, col5 = st.columns([0.7, 0.3])
         with col5:
             Fecha_inicial = st.date_input( 
-                'Seleccione Fecha inicial', value=Fecha_inicial, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+                'Seleccione Fecha inicial', value=Fecha_inicial, min_value=Datos.index[0], max_value=Datos.index[-1])
             Fecha_final = st.date_input(
-                'Seleccione Fecha Final', value=Fecha_final, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
+                'Seleccione Fecha Final', value=Fecha_final, min_value=Datos.index[0], max_value=Datos.index[-1])
             
-            st.session_state["Fecha_inicial"]=Fecha_inicial
-            st.session_state["Fecha_final"]=Fecha_final
+            st.session_state["Fecha_inicial"]=Fecha_inicial.__str__()
+            st.session_state["Fecha_final"]=Fecha_final.__str__()
 
         with col4:
-            chart_pot = Datos[(Datos.index >= Fecha_inicial) & (Datos.index <= Fecha_final)].drop(columns=['Temperatura (°C)', 'Irradiancia (W/m²)', 'Temperatura de Celda'], errors='ignore') #Filtro la tabla y le saco las columnas excedentes
+            # a=dt.time(23,59,0).__str__()
+            # Fecha_inicial_seleccionado=Fecha_inicial.__str__()+ ' '+ dt.time(23,59,0).__str__()
+            # Fecha_inicial_seleccionado
+            # Fecha_final_seleccionado=Fecha_final.__str__()+ ' '+ dt.time(23,59).__str__()
+            
+            chart_pot = Datos[(Datos.index >= Fecha_inicial.__str__()) & (Datos.index <= (pd.to_datetime(Fecha_final) + pd.Timedelta(days=1)))].drop(columns=['Temperatura (°C)', 'Irradiancia (W/m²)', 'Temperatura de Celda'], errors='ignore') #Filtro la tabla y le saco las columnas excedentes
+            chart_pot
             if option == "En semanas" :
                 potencia_media = chart_pot.resample('W').mean() #Uso el resample para calcular la media
                 st.bar_chart(potencia_media)
                 
-                chart_pot.resample('W')
+                chart_pot.resample('W').last()
 
             if option == "En días" :
                 potencia_media = chart_pot.resample('D').mean() #Uso el resample para calcular la media
                 st.bar_chart(potencia_media)
 
-        
+        # Fecha_inicial_seleccionado = Fecha_inicial + ' ' + Tiempo_inicial.__str__()
+        # Fecha_final_seleccionado = Fecha_final + ' ' + Tiempo_final.__str__()
        
         st.write('### Días principales')
 
