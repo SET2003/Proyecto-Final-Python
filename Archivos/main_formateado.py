@@ -328,7 +328,7 @@ if seccion == "Acerca de":
 
 
 if seccion == "Datos":
-    st.title("Cálculo generador fotovoltaico")
+    st.image("Archivos//Imagenes//banner_calculo.jpg")
     # Le pido al usuario que cargue una tabla
     st.header("Carga de datos climatológicos", divider="blue")
 
@@ -710,7 +710,7 @@ if seccion == "Estadísticas":
     if "Datos" not in st.session_state:
         st.warning('⚠️ Ingrese los datos a través de la pestaña "Datos".')
     else:
-        st.title("Estadísticas")
+        st.image("Archivos//Imagenes//banner_est.jpg")
         st.header("Gráficas", divider="blue")
         # El usuario elige si quiere los datos en días o semanas
         option = st.selectbox(
@@ -968,7 +968,7 @@ if seccion == "Estadísticas":
 
 
 if seccion == "Mapas":
-    st.title("Mapas")
+    st.image("Archivos//Imagenes//banner_mapa.jpg")
     tab1, tab2, tab3 = st.tabs(
         ["Mapa Satelital", "Mapa de irradiancas", "Mapa de temperaturas"]
     )
