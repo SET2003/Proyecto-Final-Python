@@ -372,6 +372,7 @@ if seccion == "Acerca de":
 
 
 if seccion == "Datos":
+   
     st.image("Archivos//Imagenes//banner_calculo.jpg")
     # Le pido al usuario que cargue una tabla
     st.header("Carga de datos climatológicos", divider="blue")
@@ -598,7 +599,7 @@ if seccion == "Datos":
         datos_filtrados = datos.loc[
             fecha_inicial_seleccionado:fecha_final_seleccionado, :
         ]
-
+        st.session_state["datfil"]=datos_filtrados
         # Muestro la tabla
         st.dataframe(datos_filtrados, use_container_width=True)
 
@@ -830,31 +831,27 @@ if seccion == "Estadísticas":
                 st.markdown("### Potencia")
                 if option == "Diario":
 
-                    Top_potencias = potencia_media.sort_values(
-                        by="Potencia (kW)", ascending=False
-                    )
-                    st.write("Días de mayor Potencia obtenida")
+                    
+                    st.write("Potencia obtenida por día")
                     Nombres_col = {
                         "Fecha Formateada": "Fecha",
                         "Potencia (kW)": "Potencia (KW)",
                     }
                     st.dataframe(
-                        Top_potencias, column_config=Nombres_col,
+                        potencia_media, column_config=Nombres_col,
                         use_container_width=True
                     )
 
                 if option == "Semanal":
 
-                    Top_potencias = potencia_media.sort_values(
-                        by="Potencia (kW)", ascending=False
-                    )
-                    st.write("Semanas de mayor Potencia obtenida")
+                    
+                    st.write("Potencia obtenida por semana")
                     Nombres_col = {
                         "Fecha Formateada": "Fecha",
                         "Potencia (kW)": "Potencia [KW]",
                     }
                     st.dataframe(
-                        Top_potencias, column_config=Nombres_col,
+                        potencia_media, column_config=Nombres_col,
                         use_container_width=True
                     )
 
@@ -965,28 +962,26 @@ if seccion == "Estadísticas":
                     Top_Energia = Energia.sort_values(
                         by="Potencia (kW)", ascending=False
                     )
-                    st.markdown("Días de mayor Energía obtenida")
+                    st.markdown("Energía obtenida por día")
                     Nombres_col = {
                         "Fecha Formateada": "Fecha",
                         "Potencia (kW)": "Energía (kWh)",
                     }
                     st.dataframe(
-                        Top_Energia, column_config=Nombres_col,
+                        Energia, column_config=Nombres_col,
                         use_container_width=True
                     )
 
                 if option == "Semanal":
 
-                    Top_Energia = Energia.sort_values(
-                        by="Potencia (kW)", ascending=False
-                    )
-                    st.write("Semanas de mayor Energía obtenida")
+                    
+                    st.write("Energía obtenida por semana")
                     Nombres_col = {
                         "Fecha Formateada": "Fecha",
                         "Potencia (kW)": "Energía (kWh)",
                     }
                     st.dataframe(
-                        Top_Energia, column_config=Nombres_col,
+                        Energia, column_config=Nombres_col,
                         use_container_width=True
                     )
 
@@ -1070,21 +1065,32 @@ if seccion == "Estadísticas":
                 )
 
         st.write("---")
-        st.write("### Máximos y mínimos")
+        st.header("Máximos y Mínimos", divider="green")
 
-        st.write(
-            "La temperatura máxima fue de ",
-            datos["Temperatura (°C)"].max(),
-            "°C, el día ",
-            datos["Temperatura (°C)"].idxmax(),
-        )
-        st.write(
-            "La irradiancia máxima fue de ",
-            datos["Irradiancia (W/m²)"].max(),
-            "W/m², el día ",
-            datos["Irradiancia (W/m²)"].idxmax(),
-        )
+        datfil = datos[fecha_inicial_seleccionado:fecha_final_seleccionado]
 
+        if option == "Semanal":
+            
+
+            tabla = pd.DataFrame(
+                {
+                    "Máximo": [datfil["Temperatura (°C)"].max(), datfil["Irradiancia (W/m²)"].max(), datfil["Potencia (kW)"].max(), potencia_media["Potencia (kW)"].max(), Energia["Potencia (kW)"].max()],
+                    "Mínimo": [datfil["Temperatura (°C)"].min(), datfil["Irradiancia (W/m²)"].min(), datfil["Potencia (kW)"].min(), potencia_media["Potencia (kW)"].min(), Energia["Potencia (kW)"].min()],
+                }
+            )
+            tabla.index = ["Temperatura (°C)", "Irradiancia (W/m²)", "Potencia (kW)", "Potencia Media Semanal (kW)", "Energía Media Semanal (kWh)"]
+            st.dataframe(tabla)
+
+        if option == "Diario":
+
+            tabla = pd.DataFrame(
+                {
+                    "Máximo": [datfil["Temperatura (°C)"].max(), datfil["Irradiancia (W/m²)"].max(), datfil["Potencia (kW)"].max(), potencia_media["Potencia (kW)"].max(), Energia["Potencia (kW)"].max()],
+                    "Mínimo": [datfil["Temperatura (°C)"].min(), datfil["Irradiancia (W/m²)"].min(), datfil["Potencia (kW)"].min(), potencia_media["Potencia (kW)"].min(), Energia["Potencia (kW)"].min()],
+                }
+            )
+            tabla.index = ["Temperatura (°C)", "Irradiancia (W/m²)", "Potencia (kW)", "Potencia Media Diaria (kW)", "Energía Media Diaria (kWh)"]
+            st.dataframe(tabla)
 
 if seccion == "Mapas":
     st.image("Archivos//Imagenes//banner_mapa.jpg")
