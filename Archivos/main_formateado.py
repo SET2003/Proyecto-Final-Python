@@ -714,6 +714,9 @@ if seccion == "Estadísticas":
             datos=st.session_state['datos']
         else:
             datos=st.session_state['datos_bien_cargados']
+        
+        intervalos = datos.index.to_series().diff().dropna()
+        intervalos = intervalos[0]
 
         st.image("Archivos//Imagenes//banner_est.jpg")
         st.header("Gráficas", divider="blue")
@@ -757,10 +760,7 @@ if seccion == "Estadísticas":
                 + datetime.time.fromisoformat("23:59:59").__str__()
             )
 
-            chart_pot = datos[
-                (datos.index >= fecha_inicial_seleccionado.__str__())
-                & (datos.index <= fecha_final_seleccionado.__str__())
-            ].drop(
+            chart_pot = datos[fecha_inicial_seleccionado:fecha_final_seleccionado].drop(
                 columns=[
                     "Temperatura (°C)",
                     "Irradiancia (W/m²)",
@@ -776,24 +776,28 @@ if seccion == "Estadísticas":
                         "W"
                     ).mean()  # Uso el resample para calcular tomar las
                     # semanas y el mean para calcular la media
+                    # SE significa SIN EDITAR, es decir, antes de realizar un formateo de indice 
 
-                    potencia_media = potencia_media_SE.reset_index()
-                    potencia_media["Fecha Formateada"] = potencia_media[
-                        "Fecha"
-                    ].dt.strftime("%Y-%m-%d")
+                    fechas_semanal=potencia_media_SE.index.to_list()
 
-                    # lista=potencia_media['Fecha Formateada'].values.tolist()
+                    if fechas_semanal[-1]!=fecha_final_est:
+                        fechas_semanal[-1]=fecha_final_est
 
+                    potencia_media_SE.index=fechas_semanal
+
+                    new_index = [f'Week {fecha.year}-{fecha.month}-{fecha.day}' for fecha in potencia_media_SE.index]
+                    potencia_media_SE.index = new_index
+                    potencia_media_SE['Fecha Formateada'] = new_index
+                    
                     grafico = (
-                        alt.Chart(potencia_media)
+                        alt.Chart(potencia_media_SE)
                         .mark_bar()
                         .encode(
-                            x=alt.X("Fecha Formateada:O", title="Fecha"),
+                            x=alt.X("Fecha Formateada:O", title="Fecha", sort=new_index),
                             y=alt.Y("Potencia (kW):Q"),
                         )
                         .interactive()
                     )
-
                     st.altair_chart(grafico, use_container_width=True)
 
                 if option == "Diario":
@@ -818,6 +822,7 @@ if seccion == "Estadísticas":
 
                     st.altair_chart(grafico, use_container_width=True)
 
+
             with tab2:
                 if option == "Semanal":
 
@@ -825,7 +830,16 @@ if seccion == "Estadísticas":
                         "W"
                     ).mean()  # Uso el resample para calcular tomar las
                     # semanas y el mean para calcular la media
-                    Energia_SE["Potencia (kW)"] = Energia_SE["Potencia (kW)"]* 168
+                    contador_datos=chart_pot.resample(
+                        "W"
+                    ).count()
+                    intervalos
+                    contador_datos['contador_datos']=contador_datos["Potencia (kW)"]*intervalos
+                    contador_datos=contador_datos.drop(columns=["Temperatura de Celda (°C)","Potencia (kW)"],errors="ignore")
+                    contador_datos=contador_datos.squeeze()
+                    contador_datos
+                    Energia_SE["Potencia (kW)"]
+                    Energia_SE["Potencia (kW)"] = Energia_SE["Potencia (kW)"]* contador_datos
 
                     Energia = Energia_SE.reset_index()
                     Energia["Fecha Formateada"] = Energia["Fecha"].dt.strftime(
