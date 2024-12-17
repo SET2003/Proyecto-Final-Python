@@ -19,7 +19,6 @@ import time
 import folium
 import altair as alt
 
-
 # Configuración de la página
 
 st.set_page_config(
@@ -59,7 +58,52 @@ custom_css = """
 # Aplicar el CSS personalizado
 st.markdown(custom_css, unsafe_allow_html=True)
 
+#Verificacion de datos
+
+if 'datos' not in st.session_state:    
+    datos=pd.read_excel(
+            "Archivos\\Datos_climatologicos_Santa_Fe_2019.xlsx", index_col=0)
+    G, T= datos.columns
+    N=12
+    Gstd =1000
+    Tr = 25
+    Ppico= 240       
+    kp =-0.0044
+    rend = 0.97
+    Pinv =2.5
+    umbral_minimo =0
+    datos["Temperatura de Celda (°C)"] = datos[T] + 0.031 * datos[G]
+    Tc = datos["Temperatura de Celda (°C)"]
+    datos["Potencia (kW)"] = (
+        N * datos[G] / Gstd * Ppico * (1 + kp * (Tc - Tr)) * rend * 1e-3
+    )
+    Pmin = umbral_minimo / 100 * Pinv
+    datos["Potencia (kW)"] = datos["Potencia (kW)"].where(
+        datos["Potencia (kW)"] < Pinv, Pinv
+    )
+    datos["Potencia (kW)"] = datos["Potencia (kW)"].where(
+        datos["Potencia (kW)"] > Pmin, 0
+    )
+    st.session_state['datos']=datos
+    st.session_state['tabla_en_uso']='Pred'
+
+if 'fecha_inicial' not in st.session_state:
+    st.session_state['fecha_inicial']=datos.index[0]
+    st.session_state['fecha_final']=datos.index[-1]
+
+if 'tiempo_inicial' not in st.session_state:
+    st.session_state['tiempo_inicial']=datos.index[0].time()
+    st.session_state['tiempo_final']=datos.index[-1].time()
+
+if 'fecha_inicial_est' not in st.session_state:
+    st.session_state['fecha_inicial_est']=datos.index[0]
+    st.session_state['fecha_final_est']=datos.index[-1]
+
+# if 'toggle_datos_usuario' is not st.session_state:
+#     st.session_state['toggle_datos_usuario']=False
+
 #  Paquete para la sidebar
+
 with st.sidebar:
     st.image("Archivos\\Imagenes\\logo-utn.png")
     st.logo(
@@ -332,42 +376,75 @@ if seccion == "Datos":
     # Le pido al usuario que cargue una tabla
     st.header("Carga de datos climatológicos", divider="blue")
 
-    datos_especificos = st.toggle("Cargar nueva tabla")
+    if 'toggle_datos_especificos' not in st.session_state:
+        datos_especificos = st.toggle('Cargar nueva tabla')
+        st.session_state['toggle_datos_especificos']=datos_especificos
+    else:
+        if st.session_state['toggle_datos_especificos']==True:
+            datos_especificos = st.toggle('Cargar nueva tabla', value=True)
+        else:
+            datos_especificos = st.toggle('Cargar nueva tabla')
+
+        st.session_state['toggle_datos_especificos']=datos_especificos
+
     st.info(
-        """Los datos ingresados en forma de tabla deben estar completos,
-        respetando intervalos de tiempo constantes. Si no se ingresan, se
-        realizará el cálculo con los datos climatológicos de Santa Fe de 2019.
-        """,
-        icon="ℹ️",
-    )
-
+            'Los datos ingresados en forma de tabla deben estar completos, respetando intervalos de tiempo constantes. '
+            'Si no se ingresan, se realizará el cálculo con los datos climatológicos de Santa Fe de 2019.', 
+            icon="ℹ️"
+        )
+    
     if datos_especificos:
-
-        Datos = st.file_uploader(
+        datos_usuario=None
+        datos_usuario = st.file_uploader(
             "Ingresá el archivo",
             help="Arrastra el archivo aquí o subelo mediante el botón",
-            accept_multiple_files=False,
+            accept_multiple_files=False
         )
-        Datos = pd.read_excel(Datos, index_col=0)
+        if datos_usuario==None:
+            st.session_state['datos_usuario']=datos_usuario
+        else:
+            datos_usuario = pd.read_excel(datos_usuario, index_col=0)
+            st.session_state['datos_usuario']=datos_usuario
 
-    else:
-        # En caso de que el usuario no cargue ninguna tabla, se utiliza como
-        # ejemplo la del generador de la UTN-FRSF
-        Datos = pd.read_excel(
-            "Archivos\\Datos_climatologicos_Santa_Fe_2019.xlsx", index_col=0
-        )
-
-    st.session_state["Datos"] = Datos
+    
     # Extraigo los indices de las columnas
-    G, T = Datos.columns
+    if datos_especificos==False:
+        if 'datos_usuario' not in st.session_state:
+            # st.write('No tengo datos de usuario y cargo tabla ejemplo')
+            datos=st.session_state['datos']
+            st.session_state['tabla_en_uso']='Pred'
+        else:
+            # st.write('Si tengo datos de usuario y cargo igualmente tabla de  ejemplo')
+            datos=st.session_state['datos']
+            st.session_state['tabla_en_uso']='Pred'
+    else:
+        if isinstance(datos_usuario, pd.DataFrame):
+            st.session_state['datos_bien_cargados']=st.session_state['datos_usuario']
+        else:
+            # st.write('datos usuario es none y cargo tabla de datos', datos_usuario)
+            datos=st.session_state['datos']
+            st.session_state['tabla_en_uso']='Pred'
+    
+    if datos_especificos:         
+        if 'datos_bien_cargados' not in st.session_state:
+            datos=st.session_state['datos']
+            st.session_state['tabla_en_uso']='Pred'
+        else:
+            datos=st.session_state['datos_bien_cargados']
+            st.session_state['tabla_en_uso']='Usua'
+    else:
+        datos=st.session_state['datos']
+        st.session_state['tabla_en_uso']='Pred'
+    
 
+    G, T , *_ = datos.columns
     # Todos los datos que tiene que cargar el usuario, utiliza como
     # predeterminados los de la UTN
 
     st.header("Datos de la instalación", divider="red")
     with st.expander("**Datos**", expanded=False,
                      icon=":material/description:"):
-        with st.form("formulario", clear_on_submit=True, border=False):
+        with st.form("formulario", clear_on_submit=False, border=False):
             col1, col2 = st.columns(2)
             with col1:
                 N = st.number_input(
@@ -449,24 +526,23 @@ if seccion == "Datos":
                 st.success(" Datos guardados", icon="✅")
 
     # Corrijo la temperatura de celda en funcion a la temperatura ambiente
-    Datos["Temperatura de Celda (°C)"] = Datos[T] + 0.031 * Datos[G]
-    Tc = Datos["Temperatura de Celda (°C)"]
+    datos["Temperatura de Celda (°C)"] = datos[T] + 0.031 * datos[G]
+    Tc = datos["Temperatura de Celda (°C)"]
 
     # Calculo la potencia y la guardo en una nueva columna
-    Datos["Potencia (kW)"] = (
-        N * Datos[G] / Gstd * Ppico * (1 + kp * (Tc - Tr)) * rend * 1e-3
+    datos["Potencia (kW)"] = (
+        N * datos[G] / Gstd * Ppico * (1 + kp * (Tc - Tr)) * rend * 1e-3
     )
 
     # Analizo si los valores de potencia estan dentro de rango, de no ser así
     # los reemplazo por el correspondiente
     Pmin = umbral_minimo / 100 * Pinv
-    Datos["Potencia (kW)"] = Datos["Potencia (kW)"].where(
-        Datos["Potencia (kW)"] < Pinv, Pinv
+    datos["Potencia (kW)"] = datos["Potencia (kW)"].where(
+        datos["Potencia (kW)"] < Pinv, Pinv
     )
-    Datos["Potencia (kW)"] = Datos["Potencia (kW)"].where(
-        Datos["Potencia (kW)"] > Pmin, 0
+    datos["Potencia (kW)"] = datos["Potencia (kW)"].where(
+        datos["Potencia (kW)"] > Pmin, 0
     )
-
     # Muestro la Tabla (de aca a proximas lineas)
     st.markdown("## Tabla Cargada")
 
@@ -477,130 +553,54 @@ if seccion == "Datos":
     with col2:
 
         # Calculo los intervalos de tiempo
-        intervalos = Datos.index.to_series().diff().dropna()
+        intervalos = datos.index.to_series().diff().dropna()
         intervalos = intervalos[0]
         # Le pido al usuario que seleccione que datos quiere ver, de predeterminado muestra toda la tabla
-
-        # if ('Fecha_inicial' or 'Fecha_final') not in st.session_state:
-        #     st.session_state['Fecha_inicial']=Datos.index[0]
-        #     st.session_state['Fecha_final']=Datos.index[-1]
-
-        # Fecha_inicial_anterior= st.session_state["Fecha_inicial"]
-        # Fecha_inicial_anterior=dt.strptime(Fecha_inicial_anterior, '%Y-%m-%d')
-        # Fecha_final_anterior = st.session_state["Fecha_final"]
-        # Fecha_final_anterior=dt.strptime(Fecha_final_anterior, '%Y-%m-%d')
-
-        # st.session_state['Fecha_inicial'] = st.date_input(
-        #         'Seleccione Fecha Inicial', value=Fecha_inicial_anterior, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
-        # st.session_state['Fecha_final']= st.date_input(
-        #         'Seleccione Fecha Final', value=Fecha_final_anterior, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
-
-        # Fecha_inicial=st.session_state['Fecha_inicial']
-        # Fecha_final=st.session_state['Fecha_final']
-
-        # if Fecha_inicial_anterior != Fecha_inicial:
-        #     st.session_state['Fecha_inicial']=Fecha_inicial
-        # if Fecha_final_anterior != Fecha_final:
-        #     st.session_state['Fecha_final']=Fecha_final
-
-        if ("Fecha_inicial" or "Fecha_final") not in st.session_state:
-            Fecha_inicial = st.date_input(
+            
+        fecha_inicial = st.date_input(
                 "Seleccione Fecha Inicial",
-                value=Datos.index[0],
-                min_value=Datos.index[0],
-                max_value=Datos.index[-1],
-            ).__str__()
-            Fecha_final = st.date_input(
-                "Seleccione Fecha Final",
-                value=Datos.index[-1],
-                min_value=Datos.index[0],
-                max_value=Datos.index[-1],
-            ).__str__()
-        else:
-
-            Fecha_inicial = st.session_state["Fecha_inicial"]
-            Fecha_inicial = dt.strptime(Fecha_inicial, "%Y-%m-%d")
-            Fecha_final = st.session_state["Fecha_final"]
-            Fecha_final = dt.strptime(Fecha_final, "%Y-%m-%d")
-
-            Fecha_inicial = st.date_input(
+                min_value=datos.index[0],
+                max_value=datos.index[-1],
+                key='fecha_inicial'
+            )
+        
+        fecha_final = st.date_input(
                 "Seleccione Fecha Inicial",
-                value=Fecha_inicial,
-                min_value=Datos.index[0],
-                max_value=Datos.index[-1],
-            ).__str__()
+                min_value=datos.index[0],
+                max_value=datos.index[-1],
+                key='fecha_final'
+        )
+        
+        st.session_state['fecha_inicial_est']=fecha_inicial
+        st.session_state['fecha_final_est']=fecha_final
 
-            Fecha_final = st.date_input(
-                "Seleccione Fecha Final",
-                value=Fecha_final,
-                min_value=Datos.index[0],
-                max_value=Datos.index[-1],
-            ).__str__()
-
-        # if 'Fecha_inicial' not in st.session_state:
-        #     st.write('La fecha inicial no está guardada')
-        #     Fecha_inicial = st.date_input(
-        #         'Seleccione Fecha Inicial', value=Datos.index[0], min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
-
-        # else:
-        #     st.write('La fecha si está guardada')
-        #     Fecha_inicial= st.session_state["Fecha_inicial"]
-        #     Fecha_inicial=dt.strptime(Fecha_inicial, '%Y-%m-%d')
-
-        #     Fecha_inicial = st.date_input(
-        #         'Seleccione Fecha Inicial', value=Fecha_inicial, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
-
-        # if 'Fecha_final' not in st.session_state:
-
-        #     Fecha_final = st.date_input(
-        #         'Seleccione Fecha Final', value=Datos.index[-1], min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
-
-        # else:
-        #     Fecha_final = st.session_state["Fecha_final"]
-        #     Fecha_final=dt.strptime(Fecha_final, '%Y-%m-%d')
-
-        #     Fecha_final = st.date_input(
-        #         'Seleccione Fecha Final', value=Fecha_final, min_value=Datos.index[0], max_value=Datos.index[-1]).__str__()
-
-        if ("Tiempo_inicial" or "Tiempo_final") not in st.session_state:
-            Tiempo_inicial = st.time_input(
-                "Tiempo inicial", value=Datos.index[0], step=intervalos
+        tiempo_inicial = st.time_input(
+                "Tiempo inicial",
+                step=intervalos, 
+                value=st.session_state['tiempo_inicial']
             )
-            Tiempo_final = st.time_input(
-                "Tiempo final", value=Datos.index[-1], step=intervalos
-            )
-        else:
-            Tiempo_inicial = st.session_state["Tiempo_inicial"]
-            Tiempo_final = st.session_state["Tiempo_final"]
-            Tiempo_inicial = st.time_input(
-                "Tiempo inicial", value=Tiempo_inicial, step=intervalos
-            )
-            Tiempo_final = st.time_input(
-                "Tiempo final", value=Tiempo_final, step=intervalos
+        
+        tiempo_final = st.time_input(
+                "Tiempo final", 
+                step=intervalos, 
+                value=st.session_state['tiempo_final']
             )
 
-        # st.session_state.pop("Tiempo_inicial")
-        # st.session_state.pop("Tiempo_final")
-        # st.session_state.pop("Fecha_inicial")
-        # st.session_state.pop("Fecha_final")
-
-        st.session_state["Tiempo_inicial"] = Tiempo_inicial
-        st.session_state["Tiempo_final"] = Tiempo_final
-        st.session_state["Fecha_inicial"] = Fecha_inicial
-        st.session_state["Fecha_final"] = Fecha_final
+        st.session_state['tiempo_inicial']=tiempo_inicial
+        st.session_state['tiempo_final']=tiempo_final
 
     with col1:
         # Junto en un solo string la fecha y hora seleccionada para pasarsela
         # a la tabla
-        Fecha_inicial_seleccionado = Fecha_inicial + " " + Tiempo_inicial.__str__()
-        Fecha_final_seleccionado = Fecha_final + " " + Tiempo_final.__str__()
+        fecha_inicial_seleccionado = fecha_inicial.__str__() + " " + tiempo_inicial.__str__()
+        fecha_final_seleccionado = fecha_final.__str__() + " " + tiempo_final.__str__()
         # Agregué una variable donde están los datos filtrados por el usuario
-        Datos_filtrados = Datos.loc[
-            Fecha_inicial_seleccionado:Fecha_final_seleccionado, :
+        datos_filtrados = datos.loc[
+            fecha_inicial_seleccionado:fecha_final_seleccionado, :
         ]
 
         # Muestro la tabla
-        st.dataframe(Datos_filtrados, use_container_width=True)
+        st.dataframe(datos_filtrados, use_container_width=True)
 
     #
     #
@@ -610,7 +610,7 @@ if seccion == "Datos":
 
     st.write("# Gráficas")
 
-    if len(Datos_filtrados) > 10000:
+    if len(datos_filtrados) > 10000:
         st.warning(
             """El rango seleccionado contiene demasiados datos para graficar.
             Se recomienda reducir el rango para mejorar el rendimiento del
@@ -639,7 +639,7 @@ if seccion == "Datos":
 
             st.markdown("### Gráfico de Potencia")
             st.line_chart(
-                data=Datos_filtrados,
+                data=datos_filtrados,
                 y="Potencia (kW)",
                 x_label="Fecha/Tiempo",
                 y_label="Potencia (kW)",
@@ -648,15 +648,15 @@ if seccion == "Datos":
         with tab2:
             st.markdown("### Gráfico de Temperatura")
             st.line_chart(
-                data=Datos_filtrados,
+                data=datos_filtrados,
                 y=["Temperatura de Celda (°C)", T],
                 x_label="Fecha/Tiempo",
                 y_label="Temperatura (°C)",
             )
             st.markdown("### Mapa de calor de Temperatura")
             # st.pyplot(fig)
-            mapa_de_calor = Datos_filtrados.pivot_table(
-                index=Datos_filtrados.index, values=T, aggfunc="mean"
+            mapa_de_calor = datos_filtrados.pivot_table(
+                index=datos_filtrados.index, values=T, aggfunc="mean"
             ).sort_index(ascending=False)
 
             df = mapa_de_calor.reset_index()
@@ -687,7 +687,7 @@ if seccion == "Datos":
 
             st.markdown("### Gráfico de Irradiancia")
             st.line_chart(
-                data=Datos_filtrados,
+                data=datos_filtrados,
                 y=G,
                 x_label="Fecha/Tiempo",
                 y_label="Irradiancia (W/m²)",
@@ -698,7 +698,7 @@ if seccion == "Datos":
 
             st.markdown("### Gráfico de dispersión Irradiancia-Temperatura")
             st.scatter_chart(
-                data=Datos_filtrados,
+                data=datos_filtrados,
                 y=T,
                 x=G,
                 y_label="Temperatura (°C)",
@@ -707,9 +707,14 @@ if seccion == "Datos":
 
 
 if seccion == "Estadísticas":
-    if "Datos" not in st.session_state:
+    if "datos" not in st.session_state:
         st.warning('⚠️ Ingrese los datos a través de la pestaña "Datos".')
     else:
+        if st.session_state['tabla_en_uso']=='Pred':
+            datos=st.session_state['datos']
+        else:
+            datos=st.session_state['datos_bien_cargados']
+
         st.image("Archivos//Imagenes//banner_est.jpg")
         st.header("Gráficas", divider="blue")
         # El usuario elige si quiere los datos en días o semanas
@@ -718,49 +723,43 @@ if seccion == "Estadísticas":
             ("Semanal", "Diario"),
         )
 
-        Datos = st.session_state["Datos"]
-        Fecha_inicial = st.session_state["Fecha_inicial"]
-        Fecha_final = st.session_state["Fecha_final"]
-        Fecha_inicial = dt.strptime(Fecha_inicial, "%Y-%m-%d")
-        Fecha_final = dt.strptime(Fecha_final, "%Y-%m-%d")
-
         col4, col5 = st.columns([0.7, 0.3])
         with col5:
             st.write("")
             st.write("")
-            Fecha_inicial = st.date_input(
+            fecha_inicial_est = st.date_input(
                 "Seleccione fecha inicial",
-                value=Fecha_inicial,
-                min_value=Datos.index[0],
-                max_value=Datos.index[-1],
+                min_value=datos.index[0],
+                max_value=datos.index[-1],
+                key='fecha_inicial_est'
             )
-            Fecha_final = st.date_input(
+            fecha_final_est = st.date_input(
                 "Seleccione fecha final",
-                value=Fecha_final,
-                min_value=Datos.index[0],
-                max_value=Datos.index[-1],
+                min_value=datos.index[0],
+                max_value=datos.index[-1],
+                key='fecha_final_est'
             )
-
-            st.session_state["Fecha_inicial"] = Fecha_inicial.__str__()
-            st.session_state["Fecha_final"] = Fecha_final.__str__()
-
+        
+            st.session_state["fecha_inicial"]= fecha_inicial_est
+            st.session_state["fecha_final"]= fecha_final_est
+      
         with col4:
             tab1, tab2 = st.tabs(["Gráficas de Potencia",
                                   "Gráficas de Energía"])
-            Fecha_inicial_seleccionado = (
-                Fecha_inicial.__str__()
+            fecha_inicial_seleccionado = (
+                fecha_inicial_est.__str__()
                 + " "
                 + datetime.time.fromisoformat("00:00:00").__str__()
             )
-            Fecha_final_seleccionado = (
-                Fecha_final.__str__()
+            fecha_final_seleccionado = (
+                fecha_final_est.__str__()
                 + " "
                 + datetime.time.fromisoformat("23:59:59").__str__()
             )
 
-            chart_pot = Datos[
-                (Datos.index >= Fecha_inicial.__str__())
-                & (Datos.index <= Fecha_final_seleccionado.__str__())
+            chart_pot = datos[
+                (datos.index >= fecha_inicial_seleccionado.__str__())
+                & (datos.index <= fecha_final_seleccionado.__str__())
             ].drop(
                 columns=[
                     "Temperatura (°C)",
@@ -955,15 +954,15 @@ if seccion == "Estadísticas":
 
         st.write(
             "La temperatura máxima fue de ",
-            Datos["Temperatura (°C)"].max(),
+            datos["Temperatura (°C)"].max(),
             "°C, el día ",
-            Datos["Temperatura (°C)"].idxmax(),
+            datos["Temperatura (°C)"].idxmax(),
         )
         st.write(
             "La irradiancia máxima fue de ",
-            Datos["Irradiancia (W/m²)"].max(),
+            datos["Irradiancia (W/m²)"].max(),
             "W/m², el día ",
-            Datos["Irradiancia (W/m²)"].idxmax(),
+            datos["Irradiancia (W/m²)"].idxmax(),
         )
 
 
