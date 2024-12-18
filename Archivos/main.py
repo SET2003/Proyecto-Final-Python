@@ -8,16 +8,21 @@ Cosas obligatorias:
 
 """
 
-# Librerias que se utilizan o pueden llegar a ser necesarias
+# Librerias estándar de Python
 import datetime
+import time
 from datetime import datetime as dt
+
+# Paquetes de terceros
+import altair as alt
+import folium
+import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 import streamlit_antd_components as sac
 from streamlit_folium import st_folium
-import pandas as pd
-import time
-import folium
-import altair as alt
+
+
 
 # Configuración de la página
 
@@ -133,6 +138,16 @@ with st.sidebar:
                 type="group",
                 children=[
                     sac.MenuItem(
+                        "Google Maps",
+                        icon="link-45deg",
+                        href="https://www.google.com.ar/maps/preview",
+                    ),
+                    sac.MenuItem(
+                        "Windy",
+                        icon="link-45deg",
+                        href="https://www.windy.com/?-31.638,-60.693,5"
+                    ),
+                    sac.MenuItem(
                         "Global Solar Atlas",
                         icon="link-45deg",
                         href="https://globalsolaratlas.info/map",
@@ -147,20 +162,55 @@ with st.sidebar:
                         icon="link-45deg",
                         href="https://www.smn.gob.ar/clima/vigilancia-mapas",
                     ),
-                    sac.MenuItem(
-                        "The Weather Channel",
-                        icon="link-45deg",
-                        href=("https://weather.com/es-CR/tiempo/mapas/"
-                              "interactive/l/"
-                              "94ea62ca7e5edfac94427100a5445ee227141c74ffb4b4"
-                              "7b7588a5a76f91244f")
-                    ),
                 ],
             ),
         ],
         open_all=True,
         color="#2aa7e1",
     )
+
+# Defino fuera del if correspondiente a Acerca de, el texto a usar para el texto justificado con letras de variables en latex
+
+def justificado_latex(texto, altura=400):
+    texto1 = """
+    <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.15/dist/katex.min.css" integrity="sha384-Htz9HMhiwV8GuQ28Xr9pEs1B4qJiYu/nYLLwlDklR53QibDfmQzi7rYxXhMH/5/u" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.15/dist/katex.min.js" integrity="sha384-bxmi2jLGCvnsEqMuYLKE/KsVCxV3PqmKeK6Y6+lmNXBry6+luFkEOsmp5vD9I/7+" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.15/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+            // customised options
+            // • auto-render specific keys, e.g.:
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false},
+                {left: '\\(', right: '\\)', display: false},
+                {left: '\\[', right: '\\]', display: true}
+            ],
+            // • rendering keys, e.g.:
+            throwOnError : false
+            });
+        });
+    </script>
+                
+    <div style='text-align: justify;
+    font-family: "Source Sans Pro", sans-serif;
+    padding: 0px;
+    font-weight: 400;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: rgb(49, 51, 63);
+    background-color: rgb(255, 255, 255);
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    -webkit-font-smoothing: auto;'>
+            <p>"""
+    
+    texto2 = """</p>        
+    </div>"""
+
+    return components.html(texto1 + texto + texto2, height=altura)
 
 #  Secciones
 
@@ -272,47 +322,49 @@ if seccion == "Acerca de":
     $ \\eta $: Rendimiento global del sistema.\n
 \n
     **2. Corrección de temperatura de celda**
-
-    La temperatura de la celda difiere de la temperatura ambiente $ T $. En la
+    """
+    justificado_latex(
+        """ La temperatura de la celda difiere de la temperatura ambiente $ T $. En la
     literatura se disponen decenas de modelos matemáticos que permiten estimar
     $ T_{c} $  a partir de mediciones de $ T $. El modelo más sencillo, válido
     únicamente en ausencia de viento, indica que la relación se puede
     aproximar según:\n
-    """
+    """, altura=65)
 
     st.latex(""" T_{c}= T + 0.031\\left [ °C \\cdot m^{2}/W \\right ]
             \\cdot G""")
 
-    st.markdown(
+    justificado_latex(
         """ <div style='text-align: justify;'>
     Se destaca, por otra parte, que las mediciones de irradiancia que se toman
-    a partir de una estación meteorológica, normalmente no coinciden con G,
+    a partir de una estación meteorológica, normalmente no coinciden con $ G $,
     puesto que se realizan sobre una superficie de prueba horizontal, y no en
-    relación a la disposición real de los módulos. La obtención de G a partir
+    relación a la disposición real de los módulos. La obtención de $ G $ a partir
     de las mediciones es compleja y depende, entre otras cosas, de las
-    coordenadas geográficas del GFV (latitud y longitud), de la disposición
-    espacial de los módulos (incluidas las inclinaciones), del momento preciso
-    de análisis (año, mes, día, hora y zona horaria de implantación de la
-    instalación), de la humedad relativa y temperatura del ambiente, y de las
+    coordenadas geográficas del GFV, es decir, su latitud y longitud; de la disposición
+    espacial de los módulos, incluidas las inclinaciones; del momento preciso
+    de análisis, es decir, año, mes, día, hora y zona horaria de implantación de la
+    instalación; de la humedad relativa y temperatura del ambiente; y de las
     características de lo que se encuentra en los alrededores, en relación a
     su capacidad para reflejar en forma directa o difusa la radiación. No
     obstante, a los efectos de esta práctica, se utilizarán mediciones de
-    irradiancia asumiendo, por simplicidad, que sus valores corresponden a G.
+    irradiancia asumiendo, por simplicidad, que sus valores corresponden a $ G $.
     </div> \n""",
-        unsafe_allow_html=True,
-    )
+    altura=139)
 
     """
     **3. Límites de generación**
+    """
 
+    justificado_latex("""
     Los circuitos inversores funcionan adecuadamente siempre que la producción,
     en términos de potencia,supere un umbral mínimo $ \\mu $, habitualmente
     expresado en forma porcentual, en relación a la potencia nominal $ P_{inv}
     $ del equipo. Si este umbral no es superado, la instalación no entrega
-    potencia eléctrica. Asimismo, el valor $ P_{inv} $ (en kilo-Watt) opera
+    potencia eléctrica. Asimismo, el valor $ P_{inv} $, en kilo-Watts, opera
     como límite superior del GFV. En consecuencia, la potencia real $ P_{r} $
     que entrega la instalación se puede calcular como:
-    """
+    """, altura= 100)
 
     st.latex("""P_{min} = \\cfrac{\\mu (\\%)}{100} \\cdot P_{inv}""")
 
@@ -344,7 +396,7 @@ if seccion == "Acerca de":
             st.markdown(":material/mail: storres@frsf.utn.edu.ar")
             st.markdown(":material/call: 342-516-1517")
             st.image(
-                "Archivos//Imagenes//Diseño sin título.png",
+                "Archivos//Imagenes//Foto_santiago.png",
                 use_container_width=True
             )
 
@@ -357,7 +409,7 @@ if seccion == "Acerca de":
             st.markdown("*UTN - Facultad Regional Santa Fe*")
             st.markdown(":material/mail: lruizdiaz@frsf.utn.edu.ar")
             st.markdown(":material/call: 340-452-2507")
-            st.image("Archivos//Imagenes//FOTOLEO.png",
+            st.image("Archivos//Imagenes//Foto_leandro.png",
                      use_container_width=True)
 
     with col3:
@@ -367,7 +419,7 @@ if seccion == "Acerca de":
             st.markdown("*UTN - Facultad Regional Santa Fe*")
             st.markdown(":material/mail: magarelik@frsf.utn.edu.ar")
             st.markdown(":material/call: 342-554-7236")
-            st.image("Archivos//Imagenes//FOTOMANU.png",
+            st.image("Archivos//Imagenes//Foto_manuel.png",
                      use_container_width=True)
 
 
@@ -1094,38 +1146,36 @@ if seccion == "Estadísticas":
 
 if seccion == "Mapas":
     st.image("Archivos//Imagenes//banner_mapa.jpg")
+    st.info(
+            """Cargue la ubicación del GFV analizado, si no ingresa ningún
+            valor se mostrará por defecto la ubicación de los paneles de la UTN-FRSF
+            """,
+            icon="ℹ️",
+        )
+    with st.expander('**Ubicación del generador fotovoltaico**', icon=":material/location_on:"):
+        latitud = st.number_input(
+                    "Latitud",
+                    min_value=-90.00000000000000,
+                    max_value=90.00000000000000,
+                    value=-31.616681297694267,
+                    format="%.14f",
+                    step=1.00000000000000,
+                )
+        longitud = st.number_input(
+                    "Longitud",
+                    min_value=-180.00000000000000,
+                    max_value=180.00000000000000,
+                    value=-60.67543483706093,
+                    format="%.14f",
+                    step=1.00000000000000,
+                )
     tab1, tab2, tab3 = st.tabs(
-        ["Mapa Satelital", "Mapa de irradiancas", "Mapa de temperaturas"]
+        ["Exploración geográfica", "Mapa de irradiancias", "Mapa de temperaturas"]
     )
     with tab1:
-        st.subheader("Mapa Satelital")
-        col1, col2 = st.columns([0.3, 0.7])
-        with col1:
-            st.image("Archivos\\Imagenes\\ubicacion2.jpg",
-                     use_container_width=True)
-            st.info(
-                """Cargue la ubicación del GFV analizado, si no ingresa ningún
-                valor se mostrará la ubicación de los paneles de la UTN-FRSF
-                """,
-                icon="ℹ️",
-            )
-            latitud = st.number_input(
-                "Latitud",
-                min_value=-90.00000000000000,
-                max_value=90.00000000000000,
-                value=-31.616681297694267,
-                format="%.14f",
-                step=1.00000000000000,
-            )
-            longitud = st.number_input(
-                "Longitud",
-                min_value=-180.00000000000000,
-                max_value=180.00000000000000,
-                value=-60.67543483706093,
-                format="%.14f",
-                step=1.00000000000000,
-            )
-        with col2:
+        opciones = st.selectbox('Seleccione el mapa que desea para ver la ubicación de su GFV:', ["Mapa político", "Mapa satelital"])
+        if opciones == 'Mapa político':
+            st.subheader("Mapa Político")
             # mapa
             mapa = folium.Map(location=[latitud, longitud], zoom_start=18)
             # Las coordenadas de location indican el centro del mapa
@@ -1139,44 +1189,62 @@ if seccion == "Mapas":
             # Mostrar el mapa:
             st_folium(mapa, use_container_width=True)
 
+        elif opciones == 'Mapa satelital':
+            st.subheader('Mapa Satelital')
+            # Se usa el iframe y con código en html se muestra el mapa
+            components.html(f"""
+                    <iframe
+                        src="https://www.google.com/maps?q={latitud},{longitud}&t=k&hl=es&z=15&output=embed"
+                        width="1400"
+                        zoom="16"
+                        height="700"
+                        style="border:0;"
+                        allowfullscreen=""
+                        loading="lazy">
+                    </iframe>
+                """, height=700)
+        
+        st.write("---")
+        st.info(
+            """Todos los mapas mostrados en esta página fueron extraídos de 
+            *Google Maps*, para consultar la web oficial, acceder desde *links
+            de interés* (en el menú lateral)
+            """,
+            icon="ℹ️",
+        )
+
     with tab2:
         st.subheader(
-            "Mapa de irradiación del mundo",
-            help="""Obtenido de Global Solar Atlas, muestra la irradiación
-            directa normal""",
+            "Mapa interactivo de irradiancia solar",
+            help="""Obtenido de *Windy*""",
         )
-        st.image(
-            "Archivos\\Imagenes\\mapa_irradiancia_mundo.png",
-            use_container_width=True
-        )
+        st.info('Para utilizar el mapa puede mover el puntero que muestra la irradiancia. Además, al presionar sobre cualquier región o localidad, podrá ver un pronóstico del clima durante la semana actual')
+        components.html(f"""<iframe width="1400" height="700" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=5&overlay=solarpower&product=ecmwf&level=surface&lat={latitud}&lon={longitud}&detailLat={latitud}&detailLon={longitud}&marker=True" frameborder="0"></iframe>""", height=700, )
         st.write("---")
-        st.subheader(
-            "Mapa de irradiación de Latinoamérica",
-            help="""Obtenido de Global Solar Atlas, muestra la irradiación
-            directa normal""",
-        )
-        st.image(
-            "Archivos\\Imagenes\\mapa_irradiancia_latinoamerica.png",
-            use_container_width=True,
-        )
         st.info(
-            """Para mapas de irradiación interactivos consultar *Global Solar
-            Atlas* y *NASA POWER* (link en menú lateral)""",
+            """Si desea obtener un mapa de cualquier característica climática,
+            pulse el botón de la esquina superior derecha donde indica 'Energía
+            Solar' y podrá cambiar al mapa que busque. Para más mapas de 
+            irradiación interactivos consultar *Windy*, *Global Solar
+            Atlas* o *NASA POWER* (links en menú lateral)""",
             icon="ℹ️",
         )
 
     with tab3:
         st.subheader(
-            "Mapa de temperaturas medias de Argentina",
-            help="Obtenido de Servicio Meteorológico Nacional",
+            "Mapa interactivo de temperaturas medias",
+            help="Obtenido de *Windy*",
         )
-        st.image("Archivos\\Imagenes\\111.jpg", use_container_width=True)
+        st.info('Para utilizar el mapa puede mover el puntero que muestra la temperatura. Además, al presionar sobre cualquier región o localidad, podrá ver un pronóstico del clima durante la semana actual')
+        components.html (f"""<iframe width="1400" height="700" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=5&overlay=temp&product=ecmwf&level=surface&lat={latitud}&lon={longitud}&detailLat={latitud}&detailLon={longitud}&marker=true" frameborder="0"></iframe>""", height=700)
+        st.write('---')
         st.info(
-            """Para más mapas de temperatura consultar *Servicio Meteorológico
-            Nacional* y *The Weather Channel* (link en menú lateral)""",
+            """Si desea obtener un mapa de cualquier característica climática,
+            pulse el botón de la esquina superior derecha donde indica 'Temperatura'
+            y podrá cambiar al mapa que busque. Para más mapas de temperatura consultar *Windy* o *Servicio Meteorológico Nacional*
+            (links en menú lateral)""",
             icon="ℹ️",
         )
-
 
 if seccion == "Ayuda":
     st.header("Ayuda y soporte de la página", divider="orange")
@@ -1197,8 +1265,8 @@ if seccion == "Ayuda":
     texto = st.chat_input("Escriba aquí...")
     if texto == "1":
         with st.chat_message("assistant"):
-            """
-            *Guía de la página*
+            texto = """
+            *Guía de la página*  
             La página cuenta con cuatro secciones principales:
             * ***Acerca de***, donde podrás encontrar una breve descripción de
             la página, información de los desarrolladores y la explicación del
@@ -1221,10 +1289,20 @@ if seccion == "Ayuda":
             Si necesitas ver la ayuda de otra opción, ingresa el número debajo
             nuevamente!
             """
+            
+            # Crear un contenedor vacío
+            texto_placeholder = st.empty()
+
+            # Escribir el texto gradualmente
+            texto_parcial = ""
+            for word in texto.split(" "):  # Split divide el texto en palabras
+                texto_parcial = texto_parcial + word + " "  # En cada iteración se agrega una palabra y un espacio, se va guardando en texto parcial.
+                texto_placeholder.markdown(texto_parcial)  # Actualizo el contenedor con el texto parcial, usando markdown para mantener formatos.
+                time.sleep(0.013)  # Tiempo para dar dinamismo al chat
 
     if texto == "2":
         with st.chat_message("assistant"):
-            """
+            texto = """
             *Definiciones generales*
 
             * **GFV**: Generador Fotovoltaico. Un generador fotovoltaico es un
@@ -1243,7 +1321,7 @@ if seccion == "Ayuda":
             en un sistema fotovoltaico para controlar el flujo de energía
             entre los paneles solares y las baterías.
 
-            *Glosario de términos*
+            *Glosario de términos* \n
             A continuación encontrarás una lista con las abreviaturas y una
             explicación más detallada de todos los parámetros utilizados en el
             modelo matemático:
@@ -1298,6 +1376,16 @@ if seccion == "Ayuda":
             Si necesitas ver la ayuda de otra opción, ingresa el número debajo
             nuevamente!
             """
+
+            # Crear un contenedor vacío
+            texto_placeholder = st.empty()
+
+            # Escribir el texto gradualmente
+            texto_parcial = ""
+            for word in texto.split(" "):
+                texto_parcial = texto_parcial + word + " "
+                texto_placeholder.markdown(texto_parcial)
+                time.sleep(0.013)
 
     if texto == "3":
         with st.chat_message("assistant"):
@@ -1354,15 +1442,25 @@ if seccion == "Ayuda":
 
     if texto == "4":
         with st.chat_message("assistant"):
-            """
+            texto = """
             Si todavía tienes dudas o inconvenientes con la página, te
             recomendamos realizar el formulario disponible en **Feedback** o
             contactar alguna de las siguientes direcciones de correo
-            electrónico:
+            electrónico: \n
+            :material/mail: storres@frsf.utn.edu.ar \n
+            :material/mail: magarelik@frsf.utn.edu.ar \n
+            :material/mail: lruizdiaz@frsf.utn.edu.ar \n
             """
-            st.markdown(":material/mail: storres@frsf.utn.edu.ar")
-            st.markdown(":material/mail: magarelik@frsf.utn.edu.ar")
-            st.markdown(":material/mail: lruizdiaz@frsf.utn.edu.ar")
+
+            # Crear un contenedor vacío
+            texto_placeholder = st.empty()
+
+            # Escribir el texto gradualmente
+            texto_parcial = ""
+            for word in texto.split(" "):
+                texto_parcial = texto_parcial + word + " "
+                texto_placeholder.markdown(texto_parcial)
+                time.sleep(0.013)
 
 
 if seccion == "Feedback":
