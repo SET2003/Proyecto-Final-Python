@@ -454,16 +454,22 @@ if seccion == "Datos":
     st.header("Carga de datos climatológicos", divider="blue")
 
     if "toggle_datos_especificos" not in st.session_state:
+        # En este caso el código se ejecutaría por primera vez
         datos_especificos = st.toggle("Cargar nueva tabla")
         st.session_state["toggle_datos_especificos"] = datos_especificos
     else:
+        # Es decir, si ya hay en session state datos especificos, porque
+        # ya se corrió al menos una vez la página
+
         if st.session_state["toggle_datos_especificos"] is True:
+            # Se verifica si interruptor quedo activado antes, queda activado:
             datos_especificos = st.toggle("Cargar nueva tabla", value=True)
         else:
+            # Si el interruptor quedo desactivado, se deja desactivado:
             datos_especificos = st.toggle("Cargar nueva tabla")
 
         st.session_state["toggle_datos_especificos"] = datos_especificos
-
+        # Se guarda el toggle de datos específicos con los valores ingresados
     st.info(
         """Los datos ingresados en forma de tabla deben estar completos,
         respetando intervalos de tiempo constantes. Si no se ingresan, se
@@ -472,44 +478,55 @@ if seccion == "Datos":
         icon="ℹ️",
     )
 
-    if datos_especificos:
+    if datos_especificos:  # Se activó el toggle
         datos_usuario = None
         datos_usuario = st.file_uploader(
             "Ingresá el archivo",
-            help="Arrastra el archivo aquí o subelo mediante el botón",
+            help="Arrastra el archivo aquí o súbelo mediante el botón",
             accept_multiple_files=False,
         )
         if datos_usuario is None:
+            # Verifica si el usuario subió un archivo
             st.session_state["datos_usuario"] = datos_usuario
+            # Si no lo subió, se guarda None en session state
         else:
+            # Si subió el archivo, este se lee y guarda en session state
             datos_usuario = pd.read_excel(datos_usuario, index_col=0)
             st.session_state["datos_usuario"] = datos_usuario
 
-    if datos_especificos is False:
+    if datos_especificos is False:  # No se activó el toggle
         if "datos_usuario" not in st.session_state:
+            # Si no hay datos especificos en el sesion state
             datos = st.session_state["datos"]
             st.session_state["tabla_en_uso"] = "Pred"
+            # Se usa la tabla y datos predeterminados
         else:
             datos = st.session_state["datos"]
             st.session_state["tabla_en_uso"] = "Pred"
     else:
+        # Se verifica si los datos cargados son un dataframe
         if isinstance(datos_usuario, pd.DataFrame):
             st.session_state["datos_bien_cargados"] = st.session_state[
                 "datos_usuario"]
+            # Si están bien cargados, se usan
         else:
             datos = st.session_state["datos"]
             st.session_state["tabla_en_uso"] = "Pred"
+            # Si están mal cargados, se usan los predeterminados
 
     if datos_especificos:
         if "datos_bien_cargados" not in st.session_state:
             datos = st.session_state["datos"]
             st.session_state["tabla_en_uso"] = "Pred"
+            # Si no hay datos bien cargados en el session state, se usan pred.
         else:
+            # Si estan bien cargados, se reemplazan en datos
             datos = st.session_state["datos_bien_cargados"]
             st.session_state["tabla_en_uso"] = "Usua"
     else:
         datos = st.session_state["datos"]
         st.session_state["tabla_en_uso"] = "Pred"
+        # Si no se cargaron los datos específicos, se usan los predeterminados
 
     # Extraigo los indices de las columnas
     G, T, *_ = datos.columns
@@ -587,14 +604,19 @@ if seccion == "Datos":
                 # Barra de carga
                 mensaje_progreso = "Cargando..."
                 barra_progreso = st.progress(0, text=mensaje_progreso)
+                # Se crea la barra de carga inicializada en 0
 
                 for porcentaje_completado in range(100):
                     time.sleep(0.001)
+                    # Se hacen 100 iteraciones, retrasando en cada una la
+                    # ejecución por 0.001 segundos
                     barra_progreso.progress(
                         porcentaje_completado + 1, text=mensaje_progreso
                     )
-                time.sleep(3)
-                barra_progreso.empty()
+                    # Actualiza la barra de progreso con el porcentaje
+                    # incrementado en un 1%
+                time.sleep(1)  # Pausa adicional de 1 seg cuando ya cargó
+                barra_progreso.empty()  # Elimino barra de progreso
 
                 st.success(" Datos guardados", icon="✅")
 
@@ -612,24 +634,32 @@ if seccion == "Datos":
     Pmin = umbral_minimo / 100 * Pinv
     datos["Potencia (kW)"] = datos["Potencia (kW)"].where(
         datos["Potencia (kW)"] < Pinv, Pinv
+        # Los datos de potencia se reemplazan siempre que sean menor a la del
+        # inversor, sino se reemplazan por Pinv
     )
     datos["Potencia (kW)"] = datos["Potencia (kW)"].where(
         datos["Potencia (kW)"] > Pmin, 0
+        # Los datos de potencia se reemplazan siempre que sean mayor a la
+        # Pmin, sino se reemplazan por 0
     )
-    # Muestro la Tabla (de aca a proximas lineas)
+    # Muestro la Tabla (de aquí a proximas lineas)
     st.markdown("## Tabla Obtenida")
 
     # Genero dos columnas donde la primera es la tabla y ocupa el 70% de la
-    # ventana, mientras que la otra la uso para seleccionar fechas
+    # ventana, mientras que la otra la uso para seleccionar fechas:
     col1, col2 = st.columns([0.7, 0.3])
 
     with col2:
 
-        # Calculo los intervalos de tiempo
+        # Calculo los intervalos de tiempo:
         intervalos = datos.index.to_series().diff().dropna()
-        intervalos = intervalos[0]
+        # Tomo de datos, los indíces, los transformo a serie de pandas,
+        # y calculo la diferencia entre los elementos consecutivos (diff),
+        # eliminando los valores NaN.
+
+        intervalos = intervalos[0]  # Tomo el primer intervalo (todos iguales)
         # Le pido al usuario que seleccione que datos quiere ver, de
-        # predeterminado muestra toda la tabla
+        # predeterminado muestra toda la tabla:
 
         fecha_inicial = st.date_input(
             "Seleccione Fecha Inicial",
@@ -647,7 +677,9 @@ if seccion == "Datos":
 
         st.session_state["fecha_inicial_est"] = fecha_inicial
         st.session_state["fecha_final_est"] = fecha_final
+        # Mantengo las fechas cargadas en "Datos" en "Estadísticas"
 
+        # Se define tiempo inicial y final, a cargar por usuario:
         tiempo_inicial = st.time_input(
             "Tiempo inicial", step=intervalos,
             value=st.session_state["tiempo_inicial"]
@@ -660,6 +692,9 @@ if seccion == "Datos":
 
         st.session_state["tiempo_inicial"] = tiempo_inicial
         st.session_state["tiempo_final"] = tiempo_final
+        # Guardo en el session state los tiempos para que se mantengan al
+        # salir y volver a la sección de datos. Si no hay tiempos inicialmente
+        # se ponen los del session state definido al principio.
 
     with col1:
         # Junto en un solo string la fecha y hora seleccionada para pasarsela
@@ -669,7 +704,8 @@ if seccion == "Datos":
         )
         fecha_final_seleccionado = (fecha_final.__str__() + " " +
                                     tiempo_final.__str__())
-        # Agregué una variable donde están los datos filtrados por el usuario
+
+        # Agrego una variable donde están los datos filtrados por el usuario
         datos_filtrados = datos.loc[
             fecha_inicial_seleccionado:fecha_final_seleccionado, :
         ]
@@ -698,9 +734,7 @@ if seccion == "Datos":
         )
 
     #
-    #
     # A PARTIR DE ACÁ VAN LAS GRÁFICAS
-    #
     #
 
     st.write("# Gráficas")
@@ -719,20 +753,23 @@ if seccion == "Datos":
     else:
         Limite_puntos = True
 
+    # Defino pestañas de gráficas:
     tab1, tab2, tab3, tab4 = st.tabs(
         [
             "Gráfica de Potencia",
-            "Graficas de Temperatura",
-            "Grafica de Irradiancia",
+            "Gráficas de Temperaturas",
+            "Gráfica de Irradiancia",
             "Gráfico de dispersión G-T",
         ]
     )
 
-    # Verifico si la cantidad de puntos supera un límite donde se
-    # realentizaría mucho la página (10000 puntos), si sucede, muestro un
+    # Verifico si la cantidad de puntos supera el límite donde se
+    # realentizaría mucho la página (10000 puntos), si sucede, se muestra un
     # warning diciendo que son muchos los puntos como para realizar un gráfico.
 
     if Limite_puntos:
+        # Si límite de puntos es True, significa que, o bien no se superó el
+        # límite, o bien se activo el toggle para graficar igualmente
         with tab1:
 
             st.markdown("### Gráfico de Potencia")
@@ -744,7 +781,7 @@ if seccion == "Datos":
             )
 
         with tab2:
-            st.markdown("### Gráfico de Temperatura")
+            st.markdown("### Gráfica de Temperaturas")
             st.line_chart(
                 data=datos_filtrados,
                 y=["Temperatura de Celda (°C)", T],
@@ -752,19 +789,21 @@ if seccion == "Datos":
                 y_label="Temperatura (°C)",
             )
             st.markdown("### Mapa de calor de Temperatura")
-            # st.pyplot(fig)
             mapa_de_calor = datos_filtrados.pivot_table(
                 index=datos_filtrados.index, values=T, aggfunc="mean"
             ).sort_index(ascending=False)
+            # Se usa como índice las fechas, y como valores las temperaturas,
+            # de las cuales se calcula el promedio por HORA
 
-            df = mapa_de_calor.reset_index()
+            df = mapa_de_calor.reset_index()  # Guarda el índice como columna
             df["Fecha Formateada"] = df["Fecha"].dt.strftime("%Y-%m-%d")
+            # Formatea fechas en año-mes-día
 
-            # # Mapa de calor interactivo usando Altair
+            # Mapa de calor interactivo usando Altair
 
             heatmap = (
-                alt.Chart(df)
-                .mark_rect()
+                alt.Chart(df)  # Crea gráfico con el dataframe df
+                .mark_rect()  # Especifica que es un mapa de calor
                 .encode(
                     alt.X("Fecha Formateada:O", title="Fecha"),
                     y=alt.Y("hours(Fecha):O", title="Hora", sort="descending"),
@@ -783,7 +822,7 @@ if seccion == "Datos":
 
         with tab3:
 
-            st.markdown("### Gráfico de Irradiancia")
+            st.markdown("### Gráfica de Irradiancia")
             st.line_chart(
                 data=datos_filtrados,
                 y=G,
@@ -811,18 +850,21 @@ if seccion == "Estadísticas":
     else:
         if st.session_state["tabla_en_uso"] == "Pred":
             datos = st.session_state["datos"]
+            # Si usa la tabla pred, también los datos pred.
         else:
             datos = st.session_state["datos_bien_cargados"]
+            # Sino, se usan los datos cargados como dataframe
 
         intervalos = datos.index.to_series().diff().dropna()
         intervalos = intervalos[0]
+        # intervalo de tiempo entre índices consecutivos
 
         st.image("Archivos//Imagenes//banner_est.jpg")
         st.header("Gráficas", divider="blue")
         st.info("""Para descargar cualquiera de las gráficas, pulse click
                 derecho y guarde la imagen como png
             """, icon="ℹ️")
-        # El usuario elige si quiere los datos en días o semanas
+        # El usuario elige si quiere los datos en días o semanas:
         option = st.selectbox(
             "Seleccione el período de tiempo deseado",
             ("Semanal", "Diario"),
@@ -848,9 +890,11 @@ if seccion == "Estadísticas":
 
             st.session_state["fecha_inicial"] = fecha_inicial_est
             st.session_state["fecha_final"] = fecha_final_est
+            # Para que si se cambia o selecciona la fecha desde estadísticas,
+            # también se tome esta fecha en la sección de datos.
 
             st.info(
-                """Se toman de base las fechas cargas en datos, pero si desea
+                """Se toman de base las fechas cargadas en datos, pero si desea
                 puede cambiarlas.""",
                 icon="ℹ️"
             )
@@ -858,6 +902,7 @@ if seccion == "Estadísticas":
         with col1:
             tab1, tab2 = st.tabs(["Gráficas de Potencia",
                                   "Gráficas de Energía"])
+            # Se establece el formato de las fechas iniciales y finales:
             fecha_inicial_seleccionado = (
                 fecha_inicial_est.__str__()
                 + " "
@@ -876,8 +921,8 @@ if seccion == "Estadísticas":
                     "Irradiancia (W/m²)",
                     "Temperatura de Celda",
                 ],
-                errors="ignore",
-            )  # Filtro la tabla y le saco las columnas excedentes
+                errors="ignore",  # Evita error si la col eliminada no existe
+            )  # Filtro fechas y le saco las columnas que no se necesitan
 
             with tab1:
                 # Todo sobre POTENCIA en tab1
@@ -889,30 +934,42 @@ if seccion == "Estadísticas":
                         "W"
                     ).mean()  # Uso el resample para  tomar las
                     # semanas y el mean para calcular la media.
-                    # SE significa SIN EDITAR, es decir, antes de realizar un
+                    # SE significa Sin Editar, es decir, antes de realizar un
                     # formateo de indice (de igual forma termino utilizandolo
                     # modificado)
 
                     fechas_semanal = potencia_media_SE.index.to_list()
+                    # Convierte el índice en una lista
 
                     if fechas_semanal[-1] != fecha_final_est:
                         fechas_semanal[-1] = fecha_final_est
+                        # Si el último valor de la fechas en forma semanal,
+                        # no es igual al final de la fecha seleccionada, se
+                        # hacen coincidir
 
                     potencia_media_SE.index = fechas_semanal
+                    # Ahora se reemplaza el indice de potencias (fechas), por
+                    # las fechas corregidas (que coinciden con seleccionadas)
 
                     new_index = [
                         f"Week {fecha.year}-{fecha.month}-{fecha.day}"
                         for fecha in potencia_media_SE.index
                     ]
+                    # Se define nuevo índice en el formato indicado
                     indice_no_string = new_index
                     new_index = pd.DataFrame(new_index, columns=["Fecha"])
+                    # Se transforma la lista de índices a una sola columna de
+                    # un dataframe
                     potencia_media_SE.index = indice_no_string
                     potencia_media_SE = potencia_media_SE.reset_index()
+                    # Esto resetea el índice (1,2,...), y convierte el índice
+                    # actual en una columna del df, llamada 'index'
                     potencia_media_SE["Fecha Formateada"] = potencia_media_SE[
                         "index"]
+                    # Se le cambia el nombre a 'index' por 'fecha formateada'
                     grafico = (
                         alt.Chart(potencia_media_SE)
-                        .mark_bar()
+                        .mark_bar()  # Gráfico de barras
                         .encode(
                             x=alt.X("index:N", sort=new_index, title="Fecha"),
                             y=alt.Y("Potencia (kW):Q"),
@@ -923,9 +980,11 @@ if seccion == "Estadísticas":
 
                     potencia_media = potencia_media_SE.set_index(
                         "Fecha Formateada")
+                    # Se convierte nuevamente el índice a fecha formateada.
                     C1P, C2P, C3P, *_ = potencia_media.columns
                     potencia_media = potencia_media.drop(C1P, axis=1).drop(
                         C2P, axis=1)
+                    # Elimino dos columnas: C1P y C2P
                     st.subheader("Potencia", help="""Tabla de valores de la
                     gráfica anterior""")
 
@@ -961,6 +1020,7 @@ if seccion == "Estadísticas":
                     # Calculos para potencia diaria
 
                     potencia_media_SE = chart_pot.resample("D").mean()
+                    # Ahora se calcula la media tomando los días
 
                     potencia_media_SE = potencia_media_SE.reset_index()
                     potencia_media_SE["Fecha Formateada"] = potencia_media_SE[
@@ -1024,16 +1084,20 @@ if seccion == "Estadísticas":
 
                     Energia_SE = chart_pot.resample(
                         "W"
-                    ).mean()  # Uso el resample para calcular tomar las
+                    ).mean()  # Uso el resample para tomar las
                     # semanas y el mean para calcular la media
                     contador_datos = chart_pot.resample("W").count()
+                    # Cuenta la cantidad de datos por cada semana
                     contador_datos["contador_datos"] = (
                         contador_datos["Potencia (kW)"] * intervalos
+                        # A la cantidad de datos de potencia la multiplica por
+                        # el intervalo de tiempo al que corresponde cada dato
                     )
                     contador_datos = contador_datos.drop(
                         columns=["Temperatura de Celda (°C)", "Potencia (kW)"],
                         errors="ignore",
                     )
+                    # Se quitan columnas innecesarias
                     contador_datos = contador_datos.squeeze()
                     contador_datos = contador_datos.dt.days * 24
 
@@ -1042,7 +1106,7 @@ if seccion == "Estadísticas":
                     )
 
                     fechas_semanal = Energia_SE.index.to_list()
-
+                    # Se hacen coincidir las fechas:
                     if fechas_semanal[-1] != fecha_final_est:
                         fechas_semanal[-1] = fecha_final_est
 
@@ -1671,6 +1735,7 @@ if seccion == "Mapas":
             icon="ℹ️",
         )
 
+
 # --- Sección 3: Ayuda ---
 if seccion == "Ayuda":
     st.header("Ayuda y soporte de la página", divider="orange")
@@ -1972,7 +2037,7 @@ if seccion == "Feedback":
                 barra_progreso.progress(
                     porcentaje_completado + 1, text=mensaje_progreso
                 )
-            time.sleep(3)
+            time.sleep(1)
             barra_progreso.empty()
 
             st.success(" Enviado con éxito!", icon="✅")
