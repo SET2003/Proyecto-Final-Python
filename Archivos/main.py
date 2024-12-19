@@ -85,6 +85,19 @@ with st.sidebar:
                 type="group",
                 children=[
                     sac.MenuItem(
+                        "Información panel UTN-FRSF",
+                        icon="link-45deg",
+                        href="""https://www.hissuma-materiales.com.ar/
+                        productos/panel-solar-hissuma-solar-doble-vidrio-240w/
+                        """,
+                    ),
+                    sac.MenuItem(
+                        "Información inversor UTN-FRSF",
+                        icon="link-45deg",
+                        href="""https://files.sma.de/downloads/SBxx-1VL-40-DS-es-52.pdf
+                        """,
+                    ),
+                    sac.MenuItem(
                         "Google Maps",
                         icon="link-45deg",
                         href="https://www.google.com.ar/maps/preview",
@@ -246,7 +259,8 @@ if seccion == "Acerca de":
     información cargada de temperaturas, irradiancias y tiempo, se calculan
     otros datos estadísticos de interés, así como gráficas y mapas
     interactivos. Se toma como base incial el generador de la Facultad
-    Regional Santa Fe de la Universidad Tecnológica Nacional.
+    Regional Santa Fe de la Universidad Tecnológica Nacional (ver links
+    de interés).
     </div> """,
         unsafe_allow_html=True,
     )
