@@ -8,10 +8,13 @@ Cosas obligatorias:
 
 """
 
+# --------- PAQUETES IMPORTADOS ---------
+
 # Librerias estándar de Python
 import datetime
 import time
 from datetime import datetime as dt
+from io import BytesIO
 
 # Paquetes de terceros
 import altair as alt
@@ -23,8 +26,7 @@ import streamlit_antd_components as sac
 from streamlit_folium import st_folium
 
 
-
-# Configuración de la página
+# --------- CONFIGURACIÓN PÁGINA ---------
 
 st.set_page_config(
     page_title="Proyecto Generador Fotovoltaico",
@@ -39,7 +41,7 @@ st.set_page_config(
     },
 )
 
-# Configuración sidebar
+# --------- CONFIGURACIÓN SIDEBAR ---------
 
 # CSS personalizado para la sidebar
 custom_css = """
@@ -63,52 +65,7 @@ custom_css = """
 # Aplicar el CSS personalizado
 st.markdown(custom_css, unsafe_allow_html=True)
 
-#Verificacion de datos
-
-if 'datos' not in st.session_state:    
-    datos=pd.read_excel(
-            "Archivos\\Datos_climatologicos_Santa_Fe_2019.xlsx", index_col=0)
-    G, T= datos.columns
-    N=12
-    Gstd =1000
-    Tr = 25
-    Ppico= 240       
-    kp =-0.0044
-    rend = 0.97
-    Pinv =2.5
-    umbral_minimo =0
-    datos["Temperatura de Celda (°C)"] = datos[T] + 0.031 * datos[G]
-    Tc = datos["Temperatura de Celda (°C)"]
-    datos["Potencia (kW)"] = (
-        N * datos[G] / Gstd * Ppico * (1 + kp * (Tc - Tr)) * rend * 1e-3
-    )
-    Pmin = umbral_minimo / 100 * Pinv
-    datos["Potencia (kW)"] = datos["Potencia (kW)"].where(
-        datos["Potencia (kW)"] < Pinv, Pinv
-    )
-    datos["Potencia (kW)"] = datos["Potencia (kW)"].where(
-        datos["Potencia (kW)"] > Pmin, 0
-    )
-    st.session_state['datos']=datos
-    st.session_state['tabla_en_uso']='Pred'
-
-if 'fecha_inicial' not in st.session_state:
-    st.session_state['fecha_inicial']=datos.index[0]
-    st.session_state['fecha_final']=datos.index[-1]
-
-if 'tiempo_inicial' not in st.session_state:
-    st.session_state['tiempo_inicial']=datos.index[0].time()
-    st.session_state['tiempo_final']=datos.index[-1].time()
-
-if 'fecha_inicial_est' not in st.session_state:
-    st.session_state['fecha_inicial_est']=datos.index[0]
-    st.session_state['fecha_final_est']=datos.index[-1]
-
-# if 'toggle_datos_usuario' is not st.session_state:
-#     st.session_state['toggle_datos_usuario']=False
-
 #  Paquete para la sidebar
-
 with st.sidebar:
     st.image("Archivos\\Imagenes\\logo-utn.png")
     st.logo(
@@ -145,7 +102,7 @@ with st.sidebar:
                     sac.MenuItem(
                         "Windy",
                         icon="link-45deg",
-                        href="https://www.windy.com/?-31.638,-60.693,5"
+                        href="https://www.windy.com/?-31.638,-60.693,5",
                     ),
                     sac.MenuItem(
                         "Global Solar Atlas",
@@ -169,14 +126,38 @@ with st.sidebar:
         color="#2aa7e1",
     )
 
-# Defino fuera del if correspondiente a Acerca de, el texto a usar para el texto justificado con letras de variables en latex
+# --------- TEXTO JUSTIFICADO, VARIABLES EN LATEX ---------
+
+# Defino fuera del if correspondiente a 'Acerca de', el texto a usar para el
+# texto justificado con letras de variables en latex
+
 
 def justificado_latex(texto, altura=400):
     texto1 = """
-    <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.15/dist/katex.min.css" integrity="sha384-Htz9HMhiwV8GuQ28Xr9pEs1B4qJiYu/nYLLwlDklR53QibDfmQzi7rYxXhMH/5/u" crossorigin="anonymous">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.15/dist/katex.min.js" integrity="sha384-bxmi2jLGCvnsEqMuYLKE/KsVCxV3PqmKeK6Y6+lmNXBry6+luFkEOsmp5vD9I/7+" crossorigin="anonymous"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.15/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"></script>
+    <link
+    href='https://fonts.googleapis.com/css?family=Source+Sans+Pro'
+    rel='stylesheet'
+    type='text/css'>
+
+    <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/katex@0.16.15/dist/katex.min.css"
+    integrity="sha384-Htz9HMhiwV8GuQ28Xr9pEs1B4qJiYu/nYLLwlDklR53QibDfmQzi7rYxXhMH/5/u"
+    crossorigin="anonymous">
+
+    <script
+    defer
+    src="https://cdn.jsdelivr.net/npm/katex@0.16.15/dist/katex.min.js"
+    integrity="sha384-bxmi2jLGCvnsEqMuYLKE/KsVCxV3PqmKeK6Y6+lmNXBry6+luFkEOsmp5vD9I/7+"
+    crossorigin="anonymous">
+    </script>
+
+    <script
+    defer
+    src="https://cdn.jsdelivr.net/npm/katex@0.16.15/dist/contrib/auto-render.min.js"
+    integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh"
+    crossorigin="anonymous">
+    </script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             renderMathInElement(document.body, {
@@ -193,7 +174,7 @@ def justificado_latex(texto, altura=400):
             });
         });
     </script>
-                
+
     <div style='text-align: justify;
     font-family: "Source Sans Pro", sans-serif;
     padding: 0px;
@@ -206,14 +187,62 @@ def justificado_latex(texto, altura=400):
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
     -webkit-font-smoothing: auto;'>
             <p>"""
-    
-    texto2 = """</p>        
+
+    texto2 = """</p>
     </div>"""
 
     return components.html(texto1 + texto + texto2, height=altura)
 
-#  Secciones
 
+# --------- VERIFICACIÓN DE DATOS ---------
+
+if "datos" not in st.session_state:
+    datos = pd.read_excel(
+        "Archivos\\Datos_climatologicos_Santa_Fe_2019.xlsx", index_col=0
+    )
+    G, T = datos.columns
+    N = 12
+    Gstd = 1000
+    Tr = 25
+    Ppico = 240
+    kp = -0.0044
+    rend = 0.97
+    Pinv = 2.5
+    umbral_minimo = 0
+    datos["Temperatura de Celda (°C)"] = datos[T] + 0.031 * datos[G]
+    Tc = datos["Temperatura de Celda (°C)"]
+    datos["Potencia (kW)"] = (
+        N * datos[G] / Gstd * Ppico * (1 + kp * (Tc - Tr)) * rend * 1e-3
+    )
+    Pmin = umbral_minimo / 100 * Pinv
+    datos["Potencia (kW)"] = datos["Potencia (kW)"].where(
+        datos["Potencia (kW)"] < Pinv, Pinv
+    )
+    datos["Potencia (kW)"] = datos["Potencia (kW)"].where(
+        datos["Potencia (kW)"] > Pmin, 0
+    )
+    st.session_state["datos"] = datos
+    st.session_state["tabla_en_uso"] = "Pred"
+
+if "fecha_inicial" not in st.session_state:
+    st.session_state["fecha_inicial"] = datos.index[0]
+    st.session_state["fecha_final"] = datos.index[-1]
+
+if "tiempo_inicial" not in st.session_state:
+    st.session_state["tiempo_inicial"] = datos.index[0].time()
+    st.session_state["tiempo_final"] = datos.index[-1].time()
+
+if "fecha_inicial_est" not in st.session_state:
+    st.session_state["fecha_inicial_est"] = datos.index[0]
+    st.session_state["fecha_final_est"] = datos.index[-1]
+
+# if 'toggle_datos_usuario' is not st.session_state:
+#     st.session_state['toggle_datos_usuario']=False
+
+
+# --------- SECCIONES ---------
+
+# --- Sección 1: Acerca de ---
 if seccion == "Acerca de":
     st.header("Acerca de esta aplicación", divider="grey")
     st.image("Archivos\\Imagenes\\banner_panelessolares.jpg",
@@ -323,40 +352,45 @@ if seccion == "Acerca de":
 \n
     **2. Corrección de temperatura de celda**
     """
-    justificado_latex(
-        """ La temperatura de la celda difiere de la temperatura ambiente $ T $. En la
-    literatura se disponen decenas de modelos matemáticos que permiten estimar
-    $ T_{c} $  a partir de mediciones de $ T $. El modelo más sencillo, válido
-    únicamente en ausencia de viento, indica que la relación se puede
-    aproximar según:\n
+    justificado_latex("""
+        La temperatura de la celda difiere de la temperatura ambiente $ T
+        $. En la literatura se disponen decenas de modelos matemáticos que
+        permiten estimar $ T_{c} $  a partir de mediciones de $ T $. El modelo
+        más sencillo, válido únicamente en ausencia de viento, indica que la
+        relación se puede aproximar según:\n
     """, altura=65)
 
-    st.latex(""" T_{c}= T + 0.031\\left [ °C \\cdot m^{2}/W \\right ]
-            \\cdot G""")
+    st.latex(
+        """ T_{c}= T + 0.031\\left [ °C \\cdot m^{2}/W \\right ]
+            \\cdot G"""
+    )
 
     justificado_latex(
         """ <div style='text-align: justify;'>
     Se destaca, por otra parte, que las mediciones de irradiancia que se toman
     a partir de una estación meteorológica, normalmente no coinciden con $ G $,
     puesto que se realizan sobre una superficie de prueba horizontal, y no en
-    relación a la disposición real de los módulos. La obtención de $ G $ a partir
-    de las mediciones es compleja y depende, entre otras cosas, de las
-    coordenadas geográficas del GFV, es decir, su latitud y longitud; de la disposición
-    espacial de los módulos, incluidas las inclinaciones; del momento preciso
-    de análisis, es decir, año, mes, día, hora y zona horaria de implantación de la
-    instalación; de la humedad relativa y temperatura del ambiente; y de las
-    características de lo que se encuentra en los alrededores, en relación a
-    su capacidad para reflejar en forma directa o difusa la radiación. No
-    obstante, a los efectos de esta práctica, se utilizarán mediciones de
-    irradiancia asumiendo, por simplicidad, que sus valores corresponden a $ G $.
+    relación a la disposición real de los módulos. La obtención de $ G $ a
+    partir de las mediciones es compleja y depende, entre otras cosas, de las
+    coordenadas geográficas del GFV, es decir, su latitud y longitud; de la
+    disposición espacial de los módulos, incluidas las inclinaciones; del
+    momento preciso de análisis, es decir, año, mes, día, hora y zona horaria
+    de implantación de la instalación; de la humedad relativa y temperatura
+    del ambiente; y de las características de lo que se encuentra en los
+    alrededores, en relación a su capacidad para reflejar en forma directa o
+    difusa la radiación. No obstante, a los efectos de esta práctica, se
+    utilizarán mediciones de irradiancia asumiendo, por simplicidad, que sus
+    valores corresponden a $ G $.
     </div> \n""",
-    altura=139)
+        altura=139,
+    )
 
     """
     **3. Límites de generación**
     """
 
-    justificado_latex("""
+    justificado_latex(
+        """
     Los circuitos inversores funcionan adecuadamente siempre que la producción,
     en términos de potencia,supere un umbral mínimo $ \\mu $, habitualmente
     expresado en forma porcentual, en relación a la potencia nominal $ P_{inv}
@@ -364,7 +398,9 @@ if seccion == "Acerca de":
     potencia eléctrica. Asimismo, el valor $ P_{inv} $, en kilo-Watts, opera
     como límite superior del GFV. En consecuencia, la potencia real $ P_{r} $
     que entrega la instalación se puede calcular como:
-    """, altura= 100)
+    """,
+        altura=100,
+    )
 
     st.latex("""P_{min} = \\cfrac{\\mu (\\%)}{100} \\cdot P_{inv}""")
 
@@ -395,10 +431,8 @@ if seccion == "Acerca de":
             st.markdown("*UTN - Facultad Regional Santa Fe*")
             st.markdown(":material/mail: storres@frsf.utn.edu.ar")
             st.markdown(":material/call: 342-516-1517")
-            st.image(
-                "Archivos//Imagenes//Foto_santiago.png",
-                use_container_width=True
-            )
+            st.image("Archivos//Imagenes//Foto_santiago.png",
+                     use_container_width=True)
 
     with col2:
         with st.expander(
@@ -423,74 +457,76 @@ if seccion == "Acerca de":
                      use_container_width=True)
 
 
+# --- Sección 2.1: Datos ---
 if seccion == "Datos":
-   
+
     st.image("Archivos//Imagenes//banner_calculo.jpg")
     # Le pido al usuario que cargue una tabla
     st.header("Carga de datos climatológicos", divider="blue")
 
-    if 'toggle_datos_especificos' not in st.session_state:
-        datos_especificos = st.toggle('Cargar nueva tabla')
-        st.session_state['toggle_datos_especificos']=datos_especificos
+    if "toggle_datos_especificos" not in st.session_state:
+        datos_especificos = st.toggle("Cargar nueva tabla")
+        st.session_state["toggle_datos_especificos"] = datos_especificos
     else:
-        if st.session_state['toggle_datos_especificos']==True:
-            datos_especificos = st.toggle('Cargar nueva tabla', value=True)
+        if st.session_state["toggle_datos_especificos"] is True:
+            datos_especificos = st.toggle("Cargar nueva tabla", value=True)
         else:
-            datos_especificos = st.toggle('Cargar nueva tabla')
+            datos_especificos = st.toggle("Cargar nueva tabla")
 
-        st.session_state['toggle_datos_especificos']=datos_especificos
+        st.session_state["toggle_datos_especificos"] = datos_especificos
 
     st.info(
-            'Los datos ingresados en forma de tabla deben estar completos, respetando intervalos de tiempo constantes. '
-            'Si no se ingresan, se realizará el cálculo con los datos climatológicos de Santa Fe de 2019.', 
-            icon="ℹ️"
-        )
-    
+        """Los datos ingresados en forma de tabla deben estar completos,
+        respetando intervalos de tiempo constantes. Si no se ingresan, se
+        realizará el cálculo con los datos climatológicos de Santa Fe de 2019.
+        """,
+        icon="ℹ️",
+    )
+
     if datos_especificos:
-        datos_usuario=None
+        datos_usuario = None
         datos_usuario = st.file_uploader(
             "Ingresá el archivo",
             help="Arrastra el archivo aquí o subelo mediante el botón",
-            accept_multiple_files=False
+            accept_multiple_files=False,
         )
-        if datos_usuario==None:
-            st.session_state['datos_usuario']=datos_usuario
+        if datos_usuario is None:
+            st.session_state["datos_usuario"] = datos_usuario
         else:
             datos_usuario = pd.read_excel(datos_usuario, index_col=0)
-            st.session_state['datos_usuario']=datos_usuario
+            st.session_state["datos_usuario"] = datos_usuario
 
-    
     # Extraigo los indices de las columnas
-    if datos_especificos==False:
-        if 'datos_usuario' not in st.session_state:
+    if datos_especificos == False:
+        if "datos_usuario" not in st.session_state:
             # st.write('No tengo datos de usuario y cargo tabla ejemplo')
-            datos=st.session_state['datos']
-            st.session_state['tabla_en_uso']='Pred'
+            datos = st.session_state["datos"]
+            st.session_state["tabla_en_uso"] = "Pred"
         else:
-            # st.write('Si tengo datos de usuario y cargo igualmente tabla de  ejemplo')
-            datos=st.session_state['datos']
-            st.session_state['tabla_en_uso']='Pred'
+            # st.write('Si tengo datos de usuario y cargo igualmente tabla de ejemplo')
+            datos = st.session_state["datos"]
+            st.session_state["tabla_en_uso"] = "Pred"
     else:
         if isinstance(datos_usuario, pd.DataFrame):
-            st.session_state['datos_bien_cargados']=st.session_state['datos_usuario']
+            st.session_state["datos_bien_cargados"] = st.session_state[
+                "datos_usuario"]
         else:
             # st.write('datos usuario es none y cargo tabla de datos', datos_usuario)
-            datos=st.session_state['datos']
-            st.session_state['tabla_en_uso']='Pred'
-    
-    if datos_especificos:         
-        if 'datos_bien_cargados' not in st.session_state:
-            datos=st.session_state['datos']
-            st.session_state['tabla_en_uso']='Pred'
-        else:
-            datos=st.session_state['datos_bien_cargados']
-            st.session_state['tabla_en_uso']='Usua'
-    else:
-        datos=st.session_state['datos']
-        st.session_state['tabla_en_uso']='Pred'
-    
+            datos = st.session_state["datos"]
+            st.session_state["tabla_en_uso"] = "Pred"
 
-    G, T , *_ = datos.columns
+    if datos_especificos:
+        if "datos_bien_cargados" not in st.session_state:
+            datos = st.session_state["datos"]
+            st.session_state["tabla_en_uso"] = "Pred"
+        else:
+            datos = st.session_state["datos_bien_cargados"]
+            st.session_state["tabla_en_uso"] = "Usua"
+    else:
+        datos = st.session_state["datos"]
+        st.session_state["tabla_en_uso"] = "Pred"
+
+    G, T, *_ = datos.columns
     # Todos los datos que tiene que cargar el usuario, utiliza como
     # predeterminados los de la UTN
 
@@ -560,8 +596,9 @@ if seccion == "Datos":
 
             #  Configuración botón para entregar
             entregado = st.form_submit_button(
-                "Guardar datos", help="""Presione aquí para enviar sus
-                respuestas"""
+                "Guardar datos",
+                help="""Presione aquí para enviar sus
+                respuestas""",
             )
             if entregado:
                 # Barra de carga
@@ -608,52 +645,74 @@ if seccion == "Datos":
         # Calculo los intervalos de tiempo
         intervalos = datos.index.to_series().diff().dropna()
         intervalos = intervalos[0]
-        # Le pido al usuario que seleccione que datos quiere ver, de predeterminado muestra toda la tabla
-            
+        # Le pido al usuario que seleccione que datos quiere ver, de
+        # predeterminado muestra toda la tabla
+
         fecha_inicial = st.date_input(
-                "Seleccione Fecha Inicial",
-                min_value=datos.index[0],
-                max_value=datos.index[-1],
-                key='fecha_inicial'
-            )
-        
-        fecha_final = st.date_input(
-                "Seleccione Fecha Inicial",
-                min_value=datos.index[0],
-                max_value=datos.index[-1],
-                key='fecha_final'
+            "Seleccione Fecha Inicial",
+            min_value=datos.index[0],
+            max_value=datos.index[-1],
+            key="fecha_inicial",
         )
-        
-        st.session_state['fecha_inicial_est']=fecha_inicial
-        st.session_state['fecha_final_est']=fecha_final
+
+        fecha_final = st.date_input(
+            "Seleccione Fecha Inicial",
+            min_value=datos.index[0],
+            max_value=datos.index[-1],
+            key="fecha_final",
+        )
+
+        st.session_state["fecha_inicial_est"] = fecha_inicial
+        st.session_state["fecha_final_est"] = fecha_final
 
         tiempo_inicial = st.time_input(
-                "Tiempo inicial",
-                step=intervalos, 
-                value=st.session_state['tiempo_inicial']
-            )
-        
-        tiempo_final = st.time_input(
-                "Tiempo final", 
-                step=intervalos, 
-                value=st.session_state['tiempo_final']
-            )
+            "Tiempo inicial", step=intervalos,
+            value=st.session_state["tiempo_inicial"]
+        )
 
-        st.session_state['tiempo_inicial']=tiempo_inicial
-        st.session_state['tiempo_final']=tiempo_final
+        tiempo_final = st.time_input(
+            "Tiempo final", step=intervalos,
+            value=st.session_state["tiempo_final"]
+        )
+
+        st.session_state["tiempo_inicial"] = tiempo_inicial
+        st.session_state["tiempo_final"] = tiempo_final
 
     with col1:
         # Junto en un solo string la fecha y hora seleccionada para pasarsela
         # a la tabla
-        fecha_inicial_seleccionado = fecha_inicial.__str__() + " " + tiempo_inicial.__str__()
-        fecha_final_seleccionado = fecha_final.__str__() + " " + tiempo_final.__str__()
+        fecha_inicial_seleccionado = (
+            fecha_inicial.__str__() + " " + tiempo_inicial.__str__()
+        )
+        fecha_final_seleccionado = (fecha_final.__str__() + " " +
+                                    tiempo_final.__str__())
         # Agregué una variable donde están los datos filtrados por el usuario
         datos_filtrados = datos.loc[
             fecha_inicial_seleccionado:fecha_final_seleccionado, :
         ]
-        st.session_state["datfil"]=datos_filtrados
+        st.session_state["datfil"] = datos_filtrados
         # Muestro la tabla
         st.dataframe(datos_filtrados, use_container_width=True)
+
+        # Botón de descarga para la Tabla:
+
+        # Crear archivo Excel en memoria
+        archivo_temporal = BytesIO()  # Se crea una rchivo temporal en memoria
+        datos_filtrados.to_excel(archivo_temporal, index=True)  # Se transforma
+        # a excel el df, incluyendo las fechas (índices), y se sobreescribe en
+        # el archivo temporal.
+        archivo_temporal.seek(0)  # Permite que el botón de descarga pueda leer
+        # desde el comienzo el archivo
+
+        # Botón de descarga
+        st.download_button(
+            label="Descargar tabla en formato excel",
+            data=archivo_temporal,
+            file_name="Tabla_con_potencias.xlsx",
+            mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+            sheet"""
+            # El mime permite asegurar que el archivo es de Excel.
+        )
 
     #
     #
@@ -662,6 +721,9 @@ if seccion == "Datos":
     #
 
     st.write("# Gráficas")
+    st.info("""Para descargar cualquiera de las gráficas, pulse click derecho
+            y guarde la imagen como png
+            """, icon="ℹ️")
 
     if len(datos_filtrados) > 10000:
         st.warning(
@@ -759,20 +821,24 @@ if seccion == "Datos":
             )
 
 
+# --- Sección 2.2: Estadísticas ---
 if seccion == "Estadísticas":
     if "datos" not in st.session_state:
         st.warning('⚠️ Ingrese los datos a través de la pestaña "Datos".')
     else:
-        if st.session_state['tabla_en_uso']=='Pred':
-            datos=st.session_state['datos']
+        if st.session_state["tabla_en_uso"] == "Pred":
+            datos = st.session_state["datos"]
         else:
-            datos=st.session_state['datos_bien_cargados']
-        
+            datos = st.session_state["datos_bien_cargados"]
+
         intervalos = datos.index.to_series().diff().dropna()
         intervalos = intervalos[0]
 
         st.image("Archivos//Imagenes//banner_est.jpg")
         st.header("Gráficas", divider="blue")
+        st.info("""Para descargar cualquiera de las gráficas, pulse click
+                derecho y guarde la imagen como png
+            """, icon="ℹ️")
         # El usuario elige si quiere los datos en días o semanas
         option = st.selectbox(
             "Seleccione el período de tiempo deseado",
@@ -780,6 +846,7 @@ if seccion == "Estadísticas":
         )
 
         col4, col5 = st.columns([0.7, 0.3])
+
         with col5:
             st.write("")
             st.write("")
@@ -787,18 +854,24 @@ if seccion == "Estadísticas":
                 "Seleccione fecha inicial",
                 min_value=datos.index[0],
                 max_value=datos.index[-1],
-                key='fecha_inicial_est'
+                key="fecha_inicial_est",
             )
             fecha_final_est = st.date_input(
                 "Seleccione fecha final",
                 min_value=datos.index[0],
                 max_value=datos.index[-1],
-                key='fecha_final_est'
+                key="fecha_final_est",
             )
-        
-            st.session_state["fecha_inicial"]= fecha_inicial_est
-            st.session_state["fecha_final"]= fecha_final_est
-      
+
+            st.session_state["fecha_inicial"] = fecha_inicial_est
+            st.session_state["fecha_final"] = fecha_final_est
+
+            st.info(
+                """Se toman de base las fechas cargas en datos, pero si desea
+                puede cambiarlas.""",
+                icon="ℹ️"
+            )
+
         with col4:
             tab1, tab2 = st.tabs(["Gráficas de Potencia",
                                   "Gráficas de Energía"])
@@ -813,7 +886,8 @@ if seccion == "Estadísticas":
                 + datetime.time.fromisoformat("23:59:59").__str__()
             )
 
-            chart_pot = datos[fecha_inicial_seleccionado:fecha_final_seleccionado].drop(
+            chart_pot = datos[fecha_inicial_seleccionado:
+                              fecha_final_seleccionado].drop(
                 columns=[
                     "Temperatura (°C)",
                     "Irradiancia (W/m²)",
@@ -828,27 +902,32 @@ if seccion == "Estadísticas":
                     potencia_media_SE = chart_pot.resample(
                         "W"
                     ).mean()  # Uso el resample para calcular tomar las
-                    # semanas y el mean para calcular la media
-                    # SE significa SIN EDITAR, es decir, antes de realizar un formateo de indice 
+                    # semanas y el mean para calcular la media.
+                    # SE significa SIN EDITAR, es decir, antes de realizar un
+                    # formateo de indice
 
-                    fechas_semanal=potencia_media_SE.index.to_list()
+                    fechas_semanal = potencia_media_SE.index.to_list()
 
-                    if fechas_semanal[-1]!=fecha_final_est:
-                        fechas_semanal[-1]=fecha_final_est
+                    if fechas_semanal[-1] != fecha_final_est:
+                        fechas_semanal[-1] = fecha_final_est
 
-                    potencia_media_SE.index=fechas_semanal
+                    potencia_media_SE.index = fechas_semanal
 
-                    new_index = [f'Week {fecha.year}-{fecha.month}-{fecha.day}' for fecha in potencia_media_SE.index]
-                    indice_no_string=new_index
-                    new_index=pd.DataFrame(new_index, columns=['Fecha'])
-                    potencia_media_SE.index =indice_no_string
-                    potencia_media_SE=potencia_media_SE.reset_index()
-                    potencia_media_SE['Fecha Formateada']=potencia_media_SE['index']
+                    new_index = [
+                        f"Week {fecha.year}-{fecha.month}-{fecha.day}"
+                        for fecha in potencia_media_SE.index
+                    ]
+                    indice_no_string = new_index
+                    new_index = pd.DataFrame(new_index, columns=["Fecha"])
+                    potencia_media_SE.index = indice_no_string
+                    potencia_media_SE = potencia_media_SE.reset_index()
+                    potencia_media_SE["Fecha Formateada"] = potencia_media_SE[
+                        "index"]
                     grafico = (
                         alt.Chart(potencia_media_SE)
                         .mark_bar()
                         .encode(
-                            x=alt.X("index:N", sort=new_index,title="Fecha"),
+                            x=alt.X("index:N", sort=new_index, title="Fecha"),
                             y=alt.Y("Potencia (kW):Q"),
                         )
                         .interactive()
@@ -856,9 +935,7 @@ if seccion == "Estadísticas":
                     st.altair_chart(grafico, use_container_width=True)
 
                 if option == "Diario":
-                    potencia_media_SE = chart_pot.resample(
-                        "D"
-                    ).mean()
+                    potencia_media_SE = chart_pot.resample("D").mean()
 
                     potencia_media_SE = potencia_media_SE.reset_index()
                     potencia_media_SE["Fecha Formateada"] = potencia_media_SE[
@@ -871,42 +948,73 @@ if seccion == "Estadísticas":
                         .encode(
                             x=alt.X("Fecha Formateada:O", title="Fecha"),
                             y=alt.Y("Potencia (kW):Q"),
-                        ).interactive()
+                        )
+                        .interactive()
                     )
 
                     st.altair_chart(grafico, use_container_width=True)
-                potencia_media = potencia_media_SE.set_index("Fecha Formateada")
+                potencia_media = potencia_media_SE.set_index(
+                    "Fecha Formateada")
                 C1P, C2P, C3P, *_ = potencia_media.columns
-                potencia_media = potencia_media.drop(C1P, axis=1).drop(C2P, axis=1)
-                
+                potencia_media = potencia_media.drop(C1P, axis=1).drop(C2P,
+                                                                       axis=1)
+
                 # Ordeno las potencias de mayor a menor
-                st.markdown("### Potencia")
+                st.subheader("Potencia", help="""Tabla de valores de la gráfica
+                            anterior""")
                 if option == "Diario":
 
-                    
-                    st.write("Potencia obtenida por día")
+                    st.write("**Potencia obtenida por día**")
                     Nombres_col = {
                         "Fecha Formateada": "Fecha",
                         "Potencia (kW)": "Potencia (KW)",
                     }
                     st.dataframe(
-                        potencia_media, column_config=Nombres_col,
-                        use_container_width=True
+                        potencia_media,
+                        column_config=Nombres_col,
+                        use_container_width=True,
+                    )
+
+                    # Crear archivo Excel en memoria
+                    archivo_temporal_pd = BytesIO()
+                    potencia_media.to_excel(archivo_temporal_pd, index=True)
+                    archivo_temporal_pd.seek(0)
+
+                    # Botón de descarga
+                    st.download_button(
+                        label="Descargar tabla en formato excel",
+                        data=archivo_temporal_pd,
+                        file_name="Tabla_con_potencias_diarias.xlsx",
+                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                        sheet"""
                     )
 
                 if option == "Semanal":
 
-                    
-                    st.write("Potencia obtenida por semana")
+                    st.write("**Potencia obtenida por semana**")
                     Nombres_col = {
                         "Fecha Formateada": "Fecha",
                         "Potencia (kW)": "Potencia [KW]",
                     }
                     st.dataframe(
-                        potencia_media, column_config=Nombres_col,
-                        use_container_width=True
+                        potencia_media,
+                        column_config=Nombres_col,
+                        use_container_width=True,
                     )
 
+                    # Crear archivo Excel en memoria
+                    archivo_temporal_ps = BytesIO()
+                    potencia_media.to_excel(archivo_temporal_ps, index=True)
+                    archivo_temporal_ps.seek(0)
+
+                    # Botón de descarga
+                    st.download_button(
+                        label="Descargar tabla en formato excel",
+                        data=archivo_temporal_ps,
+                        file_name="Tabla_con_potencias_semanales.xlsx",
+                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                        sheet"""
+                    )
 
             with tab2:
                 if option == "Semanal":
@@ -915,55 +1023,62 @@ if seccion == "Estadísticas":
                         "W"
                     ).mean()  # Uso el resample para calcular tomar las
                     # semanas y el mean para calcular la media
-                    contador_datos=chart_pot.resample(
-                        "W"
-                    ).count()
-                    contador_datos['contador_datos']=contador_datos["Potencia (kW)"]*intervalos
-                    contador_datos=contador_datos.drop(columns=["Temperatura de Celda (°C)","Potencia (kW)"],errors="ignore")
-                    contador_datos=contador_datos.squeeze()
-                    contador_datos=contador_datos.dt.days * 24
-                    
-                    Energia_SE["Potencia (kW)"] = Energia_SE["Potencia (kW)"]* contador_datos 
-                    
-                #    fechas_semanal=potencia_media_SE.index.to_list()
+                    contador_datos = chart_pot.resample("W").count()
+                    contador_datos["contador_datos"] = (
+                        contador_datos["Potencia (kW)"] * intervalos
+                    )
+                    contador_datos = contador_datos.drop(
+                        columns=["Temperatura de Celda (°C)", "Potencia (kW)"],
+                        errors="ignore",
+                    )
+                    contador_datos = contador_datos.squeeze()
+                    contador_datos = contador_datos.dt.days * 24
 
-                #     if fechas_semanal[-1]!=fecha_final_est:
-                #         fechas_semanal[-1]=fecha_final_est
+                    Energia_SE["Potencia (kW)"] = (
+                        Energia_SE["Potencia (kW)"] * contador_datos
+                    )
 
-                #     potencia_media_SE.index=fechas_semanal
+                    #    fechas_semanal=potencia_media_SE.index.to_list()
 
-                #     new_index = [f'Week {fecha.year}-{fecha.month}-{fecha.day}' for fecha in potencia_media_SE.index]
-                #     indice_no_string=new_index
-                #     new_index=pd.DataFrame(new_index, columns=['Fecha'])
-                #     potencia_media_SE.index =indice_no_string
-                #     potencia_media_SE=potencia_media_SE.reset_index()
-                #     potencia_media_SE['Fecha Formateada']=potencia_media_SE['index']
-                #     grafico = (
-                #         alt.Chart(potencia_media_SE)
-                #         .mark_bar()
-                #         .encode(
-                #             x=alt.X("index:N", sort=new_index,title="Fecha"),
-                #             y=alt.Y("Potencia (kW):Q"),
-                #         )
-                #         .interactive()
-                #     )
-                #     st.altair_chart(grafico, use_container_width=True)
-                    
-                    fechas_semanal=Energia_SE.index.to_list()
+                    #     if fechas_semanal[-1]!=fecha_final_est:
+                    #         fechas_semanal[-1]=fecha_final_est
 
-                    if fechas_semanal[-1] !=fecha_final_est:
-                        fechas_semanal[-1]= fecha_final_est
-                        st.write('entre al if')
-                    
-                    Energia_SE.index=fechas_semanal
+                    #     potencia_media_SE.index=fechas_semanal
 
-                    new_index = [f'Week {fecha.year}-{fecha.month}-{fecha.day}' for fecha in Energia_SE.index]
-                    indice_no_string=new_index
-                    new_index=pd.DataFrame(new_index, columns=['Fecha'])
-                    
+                    #     new_index = [f'Week {fecha.year}-{fecha.month}-{fecha.day}' for fecha in potencia_media_SE.index]
+                    #     indice_no_string=new_index
+                    #     new_index=pd.DataFrame(new_index, columns=['Fecha'])
+                    #     potencia_media_SE.index =indice_no_string
+                    #     potencia_media_SE=potencia_media_SE.reset_index()
+                    #     potencia_media_SE['Fecha Formateada']=potencia_media_SE['index']
+                    #     grafico = (
+                    #         alt.Chart(potencia_media_SE)
+                    #         .mark_bar()
+                    #         .encode(
+                    #             x=alt.X("index:N", sort=new_index,title="Fecha"),
+                    #             y=alt.Y("Potencia (kW):Q"),
+                    #         )
+                    #         .interactive()
+                    #     )
+                    #     st.altair_chart(grafico, use_container_width=True)
+
+                    fechas_semanal = Energia_SE.index.to_list()
+
+                    if fechas_semanal[-1] != fecha_final_est:
+                        fechas_semanal[-1] = fecha_final_est
+
+                    Energia_SE.index = fechas_semanal
+
+                    new_index = [
+                        f"Week {fecha.year}-{fecha.month}-{fecha.day}"
+                        for fecha in Energia_SE.index
+                    ]
+                    indice_no_string = new_index
+                    new_index = pd.DataFrame(new_index, columns=["Fecha"])
+
                     Energia_SE.index = indice_no_string
                     Energia_SE = Energia_SE.reset_index()
-                    Energia_SE['Fecha Formateada']=Energia_SE['index']
+                    Energia_SE["Fecha Formateada"] = Energia_SE["index"]
                     # Energia = Energia_SE.reset_index()
                     # Energia["Fecha Formateada"] = Energia["Fecha"].dt.strftime(
                     #     "%Y-%m-%d"
@@ -972,7 +1087,7 @@ if seccion == "Estadísticas":
                         alt.Chart(Energia_SE)
                         .mark_bar(color="yellowgreen")
                         .encode(
-                            x=alt.X("index:N",sort=new_index, title="Fecha"),
+                            x=alt.X("index:N", sort=new_index, title="Fecha"),
                             y=alt.Y("Potencia (kW):Q", title="Energía (kWh)"),
                         )
                         .interactive()
@@ -986,9 +1101,11 @@ if seccion == "Estadísticas":
                         "D"
                     ).mean()  # Uso el resample para calcular tomar los dias y
                     # el mean para calcular la media
-                    Energia_SE["Potencia (kW)"] = Energia_SE["Potencia (kW)"] * 24
+                    Energia_SE["Potencia (kW)"] = Energia_SE[
+                        "Potencia (kW)"] * 24
                     Energia_SE = Energia_SE.reset_index()
-                    Energia_SE['Fecha Formateada'] = Energia_SE["Fecha"].dt.strftime(
+                    Energia_SE["Fecha Formateada"] = Energia_SE[
+                        "Fecha"].dt.strftime(
                         "%Y-%m-%d"
                     )
 
@@ -1007,14 +1124,15 @@ if seccion == "Estadísticas":
                 Energia = Energia_SE.set_index("Fecha Formateada")
                 C1E, C2E, C3E, *_ = Energia.columns
                 Energia = Energia.drop(C1E, axis=1).drop(C2E, axis=1)
-                
-                st.markdown("### Energía")
+
+                st.subheader("Energía", help="""Tabla de valores de la gráfica
+                             anterior""")
                 if option == "Diario":
 
                     Top_Energia = Energia.sort_values(
                         by="Potencia (kW)", ascending=False
                     )
-                    st.markdown("Energía obtenida por día")
+                    st.markdown("**Energía obtenida por día**")
                     Nombres_col = {
                         "Fecha Formateada": "Fecha",
                         "Potencia (kW)": "Energía (kWh)",
@@ -1024,10 +1142,25 @@ if seccion == "Estadísticas":
                         use_container_width=True
                     )
 
+                    Energia.rename(columns={'Potencia (kW)': 'Energía (kWh)'}, inplace=True)
+
+                    # Crear archivo Excel en memoria
+                    archivo_temporal_ed = BytesIO()
+                    Energia.to_excel(archivo_temporal_ed, index=True)
+                    archivo_temporal_ed.seek(0)
+
+                    # Botón de descarga
+                    st.download_button(
+                        label="Descargar tabla en formato excel",
+                        data=archivo_temporal_ed,
+                        file_name="Tabla_con_energía_diaria.xlsx",
+                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                        sheet"""
+                    )
+
                 if option == "Semanal":
 
-                    
-                    st.write("Energía obtenida por semana")
+                    st.write("**Energía obtenida por semana**")
                     Nombres_col = {
                         "Fecha Formateada": "Fecha",
                         "Potencia (kW)": "Energía (kWh)",
@@ -1035,6 +1168,20 @@ if seccion == "Estadísticas":
                     st.dataframe(
                         Energia, column_config=Nombres_col,
                         use_container_width=True
+                    )
+
+                    # Crear archivo Excel en memoria
+                    archivo_temporal_es = BytesIO()
+                    Energia.to_excel(archivo_temporal_es, index=True)
+                    archivo_temporal_es.seek(0)
+
+                    # Botón de descarga
+                    st.download_button(
+                        label="Descargar tabla en formato excel",
+                        data=archivo_temporal_es,
+                        file_name="Tabla_con_energía_semanal.xlsx",
+                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                        sheet"""
                     )
 
         #
@@ -1058,7 +1205,7 @@ if seccion == "Estadísticas":
                 Top_potencias = potencia_media.sort_values(
                     by="Potencia (kW)", ascending=False
                 ).head(10)
-                st.write("Días de mayor Potencia obtenida")
+                st.write("**Días de mayor Potencia obtenida**")
                 Nombres_col = {
                     "Fecha Formateada": "Fecha",
                     "Potencia (kW)": "Potencia (KW)",
@@ -1073,7 +1220,7 @@ if seccion == "Estadísticas":
                 Top_potencias = potencia_media.sort_values(
                     by="Potencia (kW)", ascending=False
                 ).head(10)
-                st.write("Semanas de mayor Potencia obtenida")
+                st.write("**Semanas de mayor Potencia obtenida**")
                 Nombres_col = {
                     "Fecha Formateada": "Fecha",
                     "Potencia (kW)": "Potencia [KW]",
@@ -1091,7 +1238,7 @@ if seccion == "Estadísticas":
                 Top_Energia = Energia.sort_values(
                     by="Potencia (kW)", ascending=False
                 ).head(10)
-                st.markdown("Días de mayor Energía obtenida")
+                st.markdown("**Días de mayor Energía obtenida**")
                 Nombres_col = {
                     "Fecha Formateada": "Fecha",
                     "Potencia (kW)": "Energía (kWh)",
@@ -1106,7 +1253,7 @@ if seccion == "Estadísticas":
                 Top_Energia = Energia.sort_values(
                     by="Potencia (kW)", ascending=False
                 ).head(10)
-                st.write("Semanas de mayor Energía obtenida")
+                st.write("**Semanas de mayor Energía obtenida**")
                 Nombres_col = {
                     "Fecha Formateada": "Fecha",
                     "Potencia (kW)": "Energía (kWh)",
@@ -1116,65 +1263,180 @@ if seccion == "Estadísticas":
                     use_container_width=True
                 )
 
-        st.write("---")
-        st.header("Máximos y Mínimos", divider="green")
-
+        st.header("Valores extremos", divider="green")
         datfil = datos[fecha_inicial_seleccionado:fecha_final_seleccionado]
+        col1, col2 = st.columns(2)
+        st.info(
+            """En caso de que existan varios mínimos o máximos absolutos,
+            en la tabla se muestra la fecha del primero de ellos.""",
+            icon="ℹ️"
+        )
 
         if option == "Semanal":
-            
 
-            tabla = pd.DataFrame(
-                {
-                    "Máximo": [datfil["Temperatura (°C)"].max(), datfil["Irradiancia (W/m²)"].max(), datfil["Potencia (kW)"].max(), potencia_media["Potencia (kW)"].max(), Energia["Potencia (kW)"].max()],
-                    "Mínimo": [datfil["Temperatura (°C)"].min(), datfil["Irradiancia (W/m²)"].min(), datfil["Potencia (kW)"].min(), potencia_media["Potencia (kW)"].min(), Energia["Potencia (kW)"].min()],
-                }
-            )
-            tabla.index = ["Temperatura (°C)", "Irradiancia (W/m²)", "Potencia (kW)", "Potencia Media Semanal (kW)", "Energía Media Semanal (kWh)"]
-            st.dataframe(tabla)
+            with col1:
+                st.subheader("Máximos")
+
+                tabla_max = pd.DataFrame(
+                    {
+                        "Fecha": [
+                            datfil["Temperatura (°C)"].idxmax(),
+                            datfil["Irradiancia (W/m²)"].idxmax(),
+                            datfil["Potencia (kW)"].idxmax(),
+                            potencia_media["Potencia (kW)"].idxmax(),
+                            Energia["Potencia (kW)"].idxmax(),
+                        ],
+                        "Máximo": [
+                            datfil["Temperatura (°C)"].max(),
+                            datfil["Irradiancia (W/m²)"].max(),
+                            datfil["Potencia (kW)"].max(),
+                            potencia_media["Potencia (kW)"].max(),
+                            Energia["Potencia (kW)"].max(),
+                        ],
+                    }
+                )
+                tabla_max.index = [
+                    "Temperatura (°C)",
+                    "Irradiancia (W/m²)",
+                    "Potencia (kW)",
+                    "Potencia Media Semanal (kW)",
+                    "Energía Media Semanal (kWh)",
+                ]
+                st.dataframe(tabla_max)
+
+            with col2:
+                st.subheader("Mínimos")
+
+                tabla_min = pd.DataFrame(
+                    {
+                        "Fecha": [
+                            datfil["Temperatura (°C)"].idxmin(),
+                            datfil["Irradiancia (W/m²)"].idxmin(),
+                            datfil["Potencia (kW)"].idxmin(),
+                            potencia_media["Potencia (kW)"].idxmin(),
+                            Energia["Potencia (kW)"].idxmin(),
+                        ],
+                        "Mínimo": [
+                            datfil["Temperatura (°C)"].min(),
+                            datfil["Irradiancia (W/m²)"].min(),
+                            datfil["Potencia (kW)"].min(),
+                            potencia_media["Potencia (kW)"].min(),
+                            Energia["Potencia (kW)"].min(),
+                        ],
+                    }
+                )
+                tabla_min.index = [
+                    "Temperatura (°C)",
+                    "Irradiancia (W/m²)",
+                    "Potencia (kW)",
+                    "Potencia Media Semanal (kW)",
+                    "Energía Media Semanal (kWh)",
+                ]
+                st.dataframe(tabla_min)
 
         if option == "Diario":
 
-            tabla = pd.DataFrame(
-                {
-                    "Máximo": [datfil["Temperatura (°C)"].max(), datfil["Irradiancia (W/m²)"].max(), datfil["Potencia (kW)"].max(), potencia_media["Potencia (kW)"].max(), Energia["Potencia (kW)"].max()],
-                    "Mínimo": [datfil["Temperatura (°C)"].min(), datfil["Irradiancia (W/m²)"].min(), datfil["Potencia (kW)"].min(), potencia_media["Potencia (kW)"].min(), Energia["Potencia (kW)"].min()],
-                }
-            )
-            tabla.index = ["Temperatura (°C)", "Irradiancia (W/m²)", "Potencia (kW)", "Potencia Media Diaria (kW)", "Energía Media Diaria (kWh)"]
-            st.dataframe(tabla)
+            with col1:
+                st.subheader("Máximos")
 
+                tabla_max = pd.DataFrame(
+                    {
+                        "Fecha": [
+                            datfil["Temperatura (°C)"].idxmax(),
+                            datfil["Irradiancia (W/m²)"].idxmax(),
+                            datfil["Potencia (kW)"].idxmax(),
+                            potencia_media["Potencia (kW)"].idxmax(),
+                            Energia["Potencia (kW)"].idxmax(),
+                        ],
+                        "Máximo": [
+                            datfil["Temperatura (°C)"].max(),
+                            datfil["Irradiancia (W/m²)"].max(),
+                            datfil["Potencia (kW)"].max(),
+                            potencia_media["Potencia (kW)"].max(),
+                            Energia["Potencia (kW)"].max(),
+                        ],
+                    }
+                )
+                tabla_max.index = [
+                    "Temperatura (°C)",
+                    "Irradiancia (W/m²)",
+                    "Potencia (kW)",
+                    "Potencia Media Diaria (kW)",
+                    "Energía Media Diaria (kWh)",
+                ]
+                st.dataframe(tabla_max)
+
+            with col2:
+                st.subheader("Mínimos")
+
+                tabla_min = pd.DataFrame(
+                    {
+                        "Fecha": [
+                            datfil["Temperatura (°C)"].idxmin(),
+                            datfil["Irradiancia (W/m²)"].idxmin(),
+                            datfil["Potencia (kW)"].idxmin(),
+                            potencia_media["Potencia (kW)"].idxmin(),
+                            Energia["Potencia (kW)"].idxmin(),
+                        ],
+                        "Mínimo": [
+                            datfil["Temperatura (°C)"].min(),
+                            datfil["Irradiancia (W/m²)"].min(),
+                            datfil["Potencia (kW)"].min(),
+                            potencia_media["Potencia (kW)"].min(),
+                            Energia["Potencia (kW)"].min(),
+                        ],
+                    }
+                )
+                tabla_min.index = [
+                    "Temperatura (°C)",
+                    "Irradiancia (W/m²)",
+                    "Potencia (kW)",
+                    "Potencia Media Diaria (kW)",
+                    "Energía Media Diaria (kWh)",
+                ]
+                st.dataframe(tabla_min)
+
+
+# --- Sección 2.3: Mapas ---
 if seccion == "Mapas":
     st.image("Archivos//Imagenes//banner_mapa.jpg")
     st.info(
-            """Cargue la ubicación del GFV analizado, si no ingresa ningún
-            valor se mostrará por defecto la ubicación de los paneles de la UTN-FRSF
+        """Cargue la ubicación del GFV analizado, si no ingresa ningún
+            valor se mostrará por defecto la ubicación de los paneles de la
+            UTN-FRSF.
             """,
-            icon="ℹ️",
-        )
-    with st.expander('**Ubicación del generador fotovoltaico**', icon=":material/location_on:"):
+        icon="ℹ️",
+    )
+    with st.expander(
+        "**Ubicación del generador fotovoltaico**",
+        icon=":material/location_on:"
+    ):
         latitud = st.number_input(
-                    "Latitud",
-                    min_value=-90.00000000000000,
-                    max_value=90.00000000000000,
-                    value=-31.616681297694267,
-                    format="%.14f",
-                    step=1.00000000000000,
-                )
+            "Latitud",
+            min_value=-90.00000000000000,
+            max_value=90.00000000000000,
+            value=-31.616681297694267,
+            format="%.14f",
+            step=1.00000000000000,
+        )
         longitud = st.number_input(
-                    "Longitud",
-                    min_value=-180.00000000000000,
-                    max_value=180.00000000000000,
-                    value=-60.67543483706093,
-                    format="%.14f",
-                    step=1.00000000000000,
-                )
+            "Longitud",
+            min_value=-180.00000000000000,
+            max_value=180.00000000000000,
+            value=-60.67543483706093,
+            format="%.14f",
+            step=1.00000000000000,
+        )
     tab1, tab2, tab3 = st.tabs(
-        ["Exploración geográfica", "Mapa de irradiancias", "Mapa de temperaturas"]
+        ["Exploración geográfica", "Mapa de irradiancias",
+         "Mapa de temperaturas"]
     )
     with tab1:
-        opciones = st.selectbox('Seleccione el mapa que desea para ver la ubicación de su GFV:', ["Mapa político", "Mapa satelital"])
-        if opciones == 'Mapa político':
+        opciones = st.selectbox(
+            "Seleccione el mapa que desea para ver la ubicación de su GFV:",
+            ["Mapa político", "Mapa satelital"],
+        )
+        if opciones == "Mapa político":
             st.subheader("Mapa Político")
             # mapa
             mapa = folium.Map(location=[latitud, longitud], zoom_start=18)
@@ -1189,10 +1451,11 @@ if seccion == "Mapas":
             # Mostrar el mapa:
             st_folium(mapa, use_container_width=True)
 
-        elif opciones == 'Mapa satelital':
-            st.subheader('Mapa Satelital')
+        elif opciones == "Mapa satelital":
+            st.subheader("Mapa Satelital")
             # Se usa el iframe y con código en html se muestra el mapa
-            components.html(f"""
+            components.html(
+                f"""
                     <iframe
                         src="https://www.google.com/maps?q={latitud},{longitud}&t=k&hl=es&z=15&output=embed"
                         width="1400"
@@ -1202,11 +1465,13 @@ if seccion == "Mapas":
                         allowfullscreen=""
                         loading="lazy">
                     </iframe>
-                """, height=700)
-        
+                """,
+                height=700,
+            )
+
         st.write("---")
         st.info(
-            """Todos los mapas mostrados en esta página fueron extraídos de 
+            """Todos los mapas mostrados en esta página fueron extraídos de
             *Google Maps*, para consultar la web oficial, acceder desde *links
             de interés* (en el menú lateral)
             """,
@@ -1218,13 +1483,27 @@ if seccion == "Mapas":
             "Mapa interactivo de irradiancia solar",
             help="""Obtenido de *Windy*""",
         )
-        st.info('Para utilizar el mapa puede mover el puntero que muestra la irradiancia. Además, al presionar sobre cualquier región o localidad, podrá ver un pronóstico del clima durante la semana actual')
-        components.html(f"""<iframe width="1400" height="700" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=5&overlay=solarpower&product=ecmwf&level=surface&lat={latitud}&lon={longitud}&detailLat={latitud}&detailLon={longitud}&marker=True" frameborder="0"></iframe>""", height=700, )
+        st.info(
+            """Para utilizar el mapa puede mover el puntero que muestra la
+            irradiancia. Además, al presionar sobre cualquier región o
+            localidad, podrá ver un pronóstico del clima durante la semana
+            actual"""
+        )
+        components.html(
+            f"""<iframe width="1400" height="700" src="https://embed.windy.com/
+            embed.html?type=map&location=coordinates&metricRain=default&
+            metricTemp=default&metricWind=default&zoom=5&overlay=solarpower&
+            product=ecmwf&level=surface&lat={latitud}&lon={longitud}&detailLat=
+            {latitud}&detailLon={longitud}&marker=True" frameborder="0"></
+            iframe>
+            """,
+            height=700,
+        )
         st.write("---")
         st.info(
             """Si desea obtener un mapa de cualquier característica climática,
             pulse el botón de la esquina superior derecha donde indica 'Energía
-            Solar' y podrá cambiar al mapa que busque. Para más mapas de 
+            Solar' y podrá cambiar al mapa que busque. Para más mapas de
             irradiación interactivos consultar *Windy*, *Global Solar
             Atlas* o *NASA POWER* (links en menú lateral)""",
             icon="ℹ️",
@@ -1235,17 +1514,35 @@ if seccion == "Mapas":
             "Mapa interactivo de temperaturas medias",
             help="Obtenido de *Windy*",
         )
-        st.info('Para utilizar el mapa puede mover el puntero que muestra la temperatura. Además, al presionar sobre cualquier región o localidad, podrá ver un pronóstico del clima durante la semana actual')
-        components.html (f"""<iframe width="1400" height="700" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=5&overlay=temp&product=ecmwf&level=surface&lat={latitud}&lon={longitud}&detailLat={latitud}&detailLon={longitud}&marker=true" frameborder="0"></iframe>""", height=700)
-        st.write('---')
+        st.info(
+            """Para utilizar el mapa puede mover el puntero que muestra la
+            temperatura. Además, al presionar sobre cualquier región o
+            localidad, podrá ver un pronóstico del clima durante la semana
+            actual
+            """
+        )
+        components.html(
+            f"""<iframe width="1400" height="700" src="https://embed.windy.com/
+            embed.html?type=map&location=coordinates&metricRain=default&
+            metricTemp=default&metricWind=default&zoom=5&overlay=temp&product=
+            ecmwf&level=surface&lat={latitud}&lon={longitud}&detailLat=
+            {latitud}&detailLon={longitud}&marker=true" frameborder="0"></
+            iframe>
+            """,
+            height=700,
+        )
+        st.write("---")
         st.info(
             """Si desea obtener un mapa de cualquier característica climática,
-            pulse el botón de la esquina superior derecha donde indica 'Temperatura'
-            y podrá cambiar al mapa que busque. Para más mapas de temperatura consultar *Windy* o *Servicio Meteorológico Nacional*
-            (links en menú lateral)""",
+            pulse el botón de la esquina superior derecha donde indica
+            'Temperatura' y podrá cambiar al mapa que busque. Para más mapas
+            de temperatura consultar *Windy* o *Servicio Meteorológico
+            Nacional* (links en menú lateral)
+            """,
             icon="ℹ️",
         )
 
+# --- Sección 3: Ayuda ---
 if seccion == "Ayuda":
     st.header("Ayuda y soporte de la página", divider="orange")
     with st.expander("**Importante**", icon="⚠️"):
@@ -1266,7 +1563,7 @@ if seccion == "Ayuda":
     if texto == "1":
         with st.chat_message("assistant"):
             texto = """
-            *Guía de la página*  
+            *Guía de la página* \n
             La página cuenta con cuatro secciones principales:
             * ***Acerca de***, donde podrás encontrar una breve descripción de
             la página, información de los desarrolladores y la explicación del
@@ -1283,21 +1580,27 @@ if seccion == "Ayuda":
             de irradiancias y temperaturas de Argentina.
             * ***Ayuda***, sección en la que se haya actualmente.
             * ***Feedback***, donde podrá encontrar un breve cuestionario
-            acerca de su experiencia con la página, lo que nos permitirá 
+            acerca de su experiencia con la página, lo que nos permitirá
             incorporar mejoras a futuro.
 
             Si necesitas ver la ayuda de otra opción, ingresa el número debajo
             nuevamente!
             """
-            
+
             # Crear un contenedor vacío
             texto_placeholder = st.empty()
 
             # Escribir el texto gradualmente
             texto_parcial = ""
             for word in texto.split(" "):  # Split divide el texto en palabras
-                texto_parcial = texto_parcial + word + " "  # En cada iteración se agrega una palabra y un espacio, se va guardando en texto parcial.
-                texto_placeholder.markdown(texto_parcial)  # Actualizo el contenedor con el texto parcial, usando markdown para mantener formatos.
+                texto_parcial = (
+                    texto_parcial + word + " "
+                )  # En cada iteración se agrega una palabra y un espacio,
+                # y se va guardando en texto parcial.
+                texto_placeholder.markdown(
+                    texto_parcial
+                )  # Actualizo el contenedor con el texto parcial, usando
+                # markdown para mantener formatos.
                 time.sleep(0.013)  # Tiempo para dar dinamismo al chat
 
     if texto == "2":
@@ -1394,8 +1697,10 @@ if seccion == "Ayuda":
             Aquí encontrarás preguntas frecuentes que pueden ayudarte en la
             utilización de la app web:
             """
-            st.info("""¿Puedo descargar los resultados de los cálculos y los
-                    gráficos?""")
+            st.info(
+                """¿Puedo descargar los resultados de los cálculos y los
+                    gráficos?"""
+            )
             with st.expander("Respuesta", icon=":material/add_circle:"):
                 """
                 Sí! Puedes descargar los resultados y gráficos en el formato
@@ -1425,8 +1730,10 @@ if seccion == "Ayuda":
                 el formato adecuado)** y extraer los resultados.
                 """
 
-            st.info("""Que pasa si quiero analizar un período prolongado de
-                    datos?""")
+            st.info(
+                """Que pasa si quiero analizar un período prolongado de
+                    datos?"""
+            )
             with st.expander("Respuesta", icon=":material/add_circle:"):
                 """
                 Podrás hacerlo, de todas formas la página te otorgorá
@@ -1463,6 +1770,7 @@ if seccion == "Ayuda":
                 time.sleep(0.013)
 
 
+# --- Sección 4: Feedback ---
 if seccion == "Feedback":
     st.header("Dejá tu comentario!", divider="blue")
     with st.form("formulario", clear_on_submit=True):
