@@ -236,9 +236,6 @@ if "fecha_inicial_est" not in st.session_state:
     st.session_state["fecha_inicial_est"] = datos.index[0]
     st.session_state["fecha_final_est"] = datos.index[-1]
 
-# if 'toggle_datos_usuario' is not st.session_state:
-#     st.session_state['toggle_datos_usuario']=False
-
 
 # --------- SECCIONES ---------
 
@@ -461,7 +458,10 @@ if seccion == "Acerca de":
 if seccion == "Datos":
 
     st.image("Archivos//Imagenes//banner_calculo.jpg")
-    # Le pido al usuario que cargue una tabla
+    
+    # Todos los datos que tiene que cargar el usuario, utiliza como
+    # predeterminados los de la UTN
+
     st.header("Carga de datos climatológicos", divider="blue")
 
     if "toggle_datos_especificos" not in st.session_state:
@@ -496,14 +496,11 @@ if seccion == "Datos":
             datos_usuario = pd.read_excel(datos_usuario, index_col=0)
             st.session_state["datos_usuario"] = datos_usuario
 
-    # Extraigo los indices de las columnas
     if datos_especificos == False:
         if "datos_usuario" not in st.session_state:
-            # st.write('No tengo datos de usuario y cargo tabla ejemplo')
             datos = st.session_state["datos"]
             st.session_state["tabla_en_uso"] = "Pred"
         else:
-            # st.write('Si tengo datos de usuario y cargo igualmente tabla de ejemplo')
             datos = st.session_state["datos"]
             st.session_state["tabla_en_uso"] = "Pred"
     else:
@@ -511,7 +508,6 @@ if seccion == "Datos":
             st.session_state["datos_bien_cargados"] = st.session_state[
                 "datos_usuario"]
         else:
-            # st.write('datos usuario es none y cargo tabla de datos', datos_usuario)
             datos = st.session_state["datos"]
             st.session_state["tabla_en_uso"] = "Pred"
 
@@ -526,9 +522,9 @@ if seccion == "Datos":
         datos = st.session_state["datos"]
         st.session_state["tabla_en_uso"] = "Pred"
 
+    # Extraigo los indices de las columnas
     G, T, *_ = datos.columns
-    # Todos los datos que tiene que cargar el usuario, utiliza como
-    # predeterminados los de la UTN
+
 
     st.header("Datos de la instalación", divider="red")
     with st.expander("**Datos**", expanded=False,
@@ -539,7 +535,6 @@ if seccion == "Datos":
                 N = st.number_input(
                     "Cantidad de Paneles", min_value=0, value=12, step=1
                 )
-                # st.markdown('Gstd Irradiancia estándar en $\cfrac {W}{m^2}$')
                 Gstd = st.number_input(
                     "Gstd Irradiancia estándar en $ W $/$ {m^2} $",
                     min_value=0.00,
@@ -730,7 +725,7 @@ if seccion == "Datos":
             """El rango seleccionado contiene demasiados datos para graficar.
             Se recomienda reducir el rango para mejorar el rendimiento del
             programa.""",
-            icon="⚠️",
+            icon="⚠️"
         )
         Limite_puntos = st.toggle("Deshabilitar limite de datos", value=False)
     else:
@@ -824,7 +819,7 @@ if seccion == "Datos":
 # --- Sección 2.2: Estadísticas ---
 if seccion == "Estadísticas":
     if "datos" not in st.session_state:
-        st.warning('⚠️ Ingrese los datos a través de la pestaña "Datos".')
+        st.warning('⚠️ No se poseen datos .')
     else:
         if st.session_state["tabla_en_uso"] == "Pred":
             datos = st.session_state["datos"]
@@ -845,9 +840,9 @@ if seccion == "Estadísticas":
             ("Semanal", "Diario"),
         )
 
-        col4, col5 = st.columns([0.7, 0.3])
+        col1, col2 = st.columns([0.7, 0.3])
 
-        with col5:
+        with col2:
             st.write("")
             st.write("")
             fecha_inicial_est = st.date_input(
@@ -872,7 +867,7 @@ if seccion == "Estadísticas":
                 icon="ℹ️"
             )
 
-        with col4:
+        with col1:
             tab1, tab2 = st.tabs(["Gráficas de Potencia",
                                   "Gráficas de Energía"])
             fecha_inicial_seleccionado = (
@@ -897,14 +892,19 @@ if seccion == "Estadísticas":
             )  # Filtro la tabla y le saco las columnas excedentes
 
             with tab1:
+                
+                # Todo sobre POTENCIA en tab1
+
                 if option == "Semanal":
 
+                    # Calculos para potencia SEMANAL
+                    
                     potencia_media_SE = chart_pot.resample(
                         "W"
-                    ).mean()  # Uso el resample para calcular tomar las
+                    ).mean()  # Uso el resample para  tomar las
                     # semanas y el mean para calcular la media.
                     # SE significa SIN EDITAR, es decir, antes de realizar un
-                    # formateo de indice
+                    # formateo de indice (de igual forma termino utilizandolo modificado)
 
                     fechas_semanal = potencia_media_SE.index.to_list()
 
@@ -934,62 +934,12 @@ if seccion == "Estadísticas":
                     )
                     st.altair_chart(grafico, use_container_width=True)
 
-                if option == "Diario":
-                    potencia_media_SE = chart_pot.resample("D").mean()
-
-                    potencia_media_SE = potencia_media_SE.reset_index()
-                    potencia_media_SE["Fecha Formateada"] = potencia_media_SE[
-                        "Fecha"
-                    ].dt.strftime("%Y-%m-%d")
-
-                    grafico = (
-                        alt.Chart(potencia_media_SE)
-                        .mark_bar()
-                        .encode(
-                            x=alt.X("Fecha Formateada:O", title="Fecha"),
-                            y=alt.Y("Potencia (kW):Q"),
-                        )
-                        .interactive()
-                    )
-
-                    st.altair_chart(grafico, use_container_width=True)
-                potencia_media = potencia_media_SE.set_index(
+                    potencia_media = potencia_media_SE.set_index(
                     "Fecha Formateada")
-                C1P, C2P, C3P, *_ = potencia_media.columns
-                potencia_media = potencia_media.drop(C1P, axis=1).drop(C2P,
-                                                                       axis=1)
-
-                # Ordeno las potencias de mayor a menor
-                st.subheader("Potencia", help="""Tabla de valores de la gráfica
-                            anterior""")
-                if option == "Diario":
-
-                    st.write("**Potencia obtenida por día**")
-                    Nombres_col = {
-                        "Fecha Formateada": "Fecha",
-                        "Potencia (kW)": "Potencia (KW)",
-                    }
-                    st.dataframe(
-                        potencia_media,
-                        column_config=Nombres_col,
-                        use_container_width=True,
-                    )
-
-                    # Crear archivo Excel en memoria
-                    archivo_temporal_pd = BytesIO()
-                    potencia_media.to_excel(archivo_temporal_pd, index=True)
-                    archivo_temporal_pd.seek(0)
-
-                    # Botón de descarga
-                    st.download_button(
-                        label="Descargar tabla en formato excel",
-                        data=archivo_temporal_pd,
-                        file_name="Tabla_con_potencias_diarias.xlsx",
-                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
-                        sheet"""
-                    )
-
-                if option == "Semanal":
+                
+                    C1P, C2P, C3P, *_ = potencia_media.columns
+                    potencia_media = potencia_media.drop(C1P, axis=1).drop(C2P,
+                                                                        axis=1)
 
                     st.write("**Potencia obtenida por semana**")
                     Nombres_col = {
@@ -1016,7 +966,70 @@ if seccion == "Estadísticas":
                         sheet"""
                     )
 
+                if option == "Diario":
+
+                    # Calculos para potencia diaria
+
+                    potencia_media_SE = chart_pot.resample("D").mean()
+
+                    potencia_media_SE = potencia_media_SE.reset_index()
+                    potencia_media_SE["Fecha Formateada"] = potencia_media_SE[
+                        "Fecha"
+                    ].dt.strftime("%Y-%m-%d")
+
+                    grafico = (
+                        alt.Chart(potencia_media_SE)
+                        .mark_bar()
+                        .encode(
+                            x=alt.X("Fecha Formateada:O", title="Fecha"),
+                            y=alt.Y("Potencia (kW):Q"),
+                        )
+                        .interactive()
+                    )
+
+                    st.altair_chart(grafico, use_container_width=True)
+
+                    #Aca va la tabla
+                        
+                    potencia_media = potencia_media_SE.set_index(
+                    "Fecha Formateada")
+                
+                    C1P, C2P, C3P, *_ = potencia_media.columns
+                    potencia_media = potencia_media.drop(C1P, axis=1).drop(C2P,
+                                                                        axis=1)
+
+                    st.subheader("Potencia", help="""Tabla de valores de la gráfica
+                                anterior""")
+
+                    st.write("**Potencia obtenida por día**")
+                    Nombres_col = {
+                        "Fecha Formateada": "Fecha",
+                        "Potencia (kW)": "Potencia (KW)",
+                    }
+                    st.dataframe(
+                        potencia_media,
+                        column_config=Nombres_col,
+                        use_container_width=True,
+                    )
+
+                    # Crear archivo Excel en memoria
+                    archivo_temporal_pd = BytesIO()
+                    potencia_media.to_excel(archivo_temporal_pd, index=True)
+                    archivo_temporal_pd.seek(0)
+
+                    # Botón de descarga
+                    st.download_button(
+                        label="Descargar tabla en formato excel",
+                        data=archivo_temporal_pd,
+                        file_name="Tabla_con_potencias_diarias.xlsx",
+                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                        sheet"""
+                    )
+
             with tab2:
+
+                # Todo sobre ENERGIA en tab2
+
                 if option == "Semanal":
 
                     Energia_SE = chart_pot.resample(
@@ -1038,30 +1051,6 @@ if seccion == "Estadísticas":
                         Energia_SE["Potencia (kW)"] * contador_datos
                     )
 
-                    #    fechas_semanal=potencia_media_SE.index.to_list()
-
-                    #     if fechas_semanal[-1]!=fecha_final_est:
-                    #         fechas_semanal[-1]=fecha_final_est
-
-                    #     potencia_media_SE.index=fechas_semanal
-
-                    #     new_index = [f'Week {fecha.year}-{fecha.month}-{fecha.day}' for fecha in potencia_media_SE.index]
-                    #     indice_no_string=new_index
-                    #     new_index=pd.DataFrame(new_index, columns=['Fecha'])
-                    #     potencia_media_SE.index =indice_no_string
-                    #     potencia_media_SE=potencia_media_SE.reset_index()
-                    #     potencia_media_SE['Fecha Formateada']=potencia_media_SE['index']
-                    #     grafico = (
-                    #         alt.Chart(potencia_media_SE)
-                    #         .mark_bar()
-                    #         .encode(
-                    #             x=alt.X("index:N", sort=new_index,title="Fecha"),
-                    #             y=alt.Y("Potencia (kW):Q"),
-                    #         )
-                    #         .interactive()
-                    #     )
-                    #     st.altair_chart(grafico, use_container_width=True)
-
                     fechas_semanal = Energia_SE.index.to_list()
 
                     if fechas_semanal[-1] != fecha_final_est:
@@ -1079,10 +1068,7 @@ if seccion == "Estadísticas":
                     Energia_SE.index = indice_no_string
                     Energia_SE = Energia_SE.reset_index()
                     Energia_SE["Fecha Formateada"] = Energia_SE["index"]
-                    # Energia = Energia_SE.reset_index()
-                    # Energia["Fecha Formateada"] = Energia["Fecha"].dt.strftime(
-                    #     "%Y-%m-%d"
-                    # )
+                
                     grafico = (
                         alt.Chart(Energia_SE)
                         .mark_bar(color="yellowgreen")
@@ -1094,6 +1080,37 @@ if seccion == "Estadísticas":
                     )
 
                     st.altair_chart(grafico, use_container_width=True)
+
+                    Energia = Energia_SE.set_index("Fecha Formateada")
+                    C1E, C2E, C3E, *_ = Energia.columns
+                    Energia = Energia.drop(C1E, axis=1).drop(C2E, axis=1)
+
+                    st.subheader("Energía", help="""Tabla de valores de la gráfica 
+                                    anterior""")
+
+                    st.write("**Energía obtenida por semana**")
+                    Nombres_col = {
+                        "Fecha Formateada": "Fecha",
+                        "Potencia (kW)": "Energía (kWh)",
+                    }
+                    st.dataframe(
+                        Energia, column_config=Nombres_col,
+                        use_container_width=True
+                    )
+
+                    # Crear archivo Excel en memoria
+                    archivo_temporal_es = BytesIO()
+                    Energia.to_excel(archivo_temporal_es, index=True)
+                    archivo_temporal_es.seek(0)
+
+                    # Botón de descarga
+                    st.download_button(
+                        label="Descargar tabla en formato excel",
+                        data=archivo_temporal_es,
+                        file_name="Tabla_con_energía_semanal.xlsx",
+                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                        sheet"""
+                    )
 
                 if option == "Diario":
 
@@ -1121,13 +1138,12 @@ if seccion == "Estadísticas":
 
                     st.altair_chart(grafico, use_container_width=True)
 
-                Energia = Energia_SE.set_index("Fecha Formateada")
-                C1E, C2E, C3E, *_ = Energia.columns
-                Energia = Energia.drop(C1E, axis=1).drop(C2E, axis=1)
+                    Energia = Energia_SE.set_index("Fecha Formateada")
+                    C1E, C2E, C3E, *_ = Energia.columns
+                    Energia = Energia.drop(C1E, axis=1).drop(C2E, axis=1)
 
-                st.subheader("Energía", help="""Tabla de valores de la gráfica
-                             anterior""")
-                if option == "Diario":
+                    st.subheader("Energía", help="""Tabla de valores de la gráfica
+                                anterior""")
 
                     Top_Energia = Energia.sort_values(
                         by="Potencia (kW)", ascending=False
@@ -1156,33 +1172,7 @@ if seccion == "Estadísticas":
                         file_name="Tabla_con_energía_diaria.xlsx",
                         mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
                         sheet"""
-                    )
-
-                if option == "Semanal":
-
-                    st.write("**Energía obtenida por semana**")
-                    Nombres_col = {
-                        "Fecha Formateada": "Fecha",
-                        "Potencia (kW)": "Energía (kWh)",
-                    }
-                    st.dataframe(
-                        Energia, column_config=Nombres_col,
-                        use_container_width=True
-                    )
-
-                    # Crear archivo Excel en memoria
-                    archivo_temporal_es = BytesIO()
-                    Energia.to_excel(archivo_temporal_es, index=True)
-                    archivo_temporal_es.seek(0)
-
-                    # Botón de descarga
-                    st.download_button(
-                        label="Descargar tabla en formato excel",
-                        data=archivo_temporal_es,
-                        file_name="Tabla_con_energía_semanal.xlsx",
-                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
-                        sheet"""
-                    )
+                    )  
 
         #
         # Todo sobre Datos caracteristicos
@@ -1190,15 +1180,20 @@ if seccion == "Estadísticas":
 
         st.header("Datos característicos", divider="red")
 
-        col6, col7 = st.columns([0.5, 0.5], gap="large")
+        col1, col2 = st.columns([0.5, 0.5], gap="large")
+        
         Energia = Energia_SE.set_index("Fecha Formateada")
         C1E, C2E, C3E, *_ = Energia.columns
         Energia = Energia.drop(C1E, axis=1).drop(C2E, axis=1)
+        
         potencia_media = potencia_media_SE.set_index("Fecha Formateada")
         C1P, C2P, C3P, *_ = potencia_media.columns
         potencia_media = potencia_media.drop(C1P, axis=1).drop(C2P, axis=1)
-        with col6:
-            # Ordeno las potencias de mayor a menor
+        
+        with col1:
+            
+            # Potencias en col1
+
             st.markdown("### Potencia")
             if option == "Diario":
 
@@ -1230,8 +1225,10 @@ if seccion == "Estadísticas":
                     use_container_width=True
                 )
 
-        with col7:
-            # ACÁ VA LO DE ENERGÍA
+        with col2:
+
+            # Energia en col2
+            
             st.markdown("### Energía")
             if option == "Diario":
 
@@ -1263,6 +1260,8 @@ if seccion == "Estadísticas":
                     use_container_width=True
                 )
 
+        # Apartado de maximos y minimos
+
         st.header("Valores extremos", divider="green")
         datfil = datos[fecha_inicial_seleccionado:fecha_final_seleccionado]
         col1, col2 = st.columns(2)
@@ -1275,6 +1274,9 @@ if seccion == "Estadísticas":
         if option == "Semanal":
 
             with col1:
+                
+                # Col 1 para maximos (semanal)
+
                 st.subheader("Máximos")
 
                 tabla_max = pd.DataFrame(
@@ -1305,6 +1307,9 @@ if seccion == "Estadísticas":
                 st.dataframe(tabla_max)
 
             with col2:
+                
+                # Col 1 minimos maximos (semanal)
+
                 st.subheader("Mínimos")
 
                 tabla_min = pd.DataFrame(
@@ -1337,6 +1342,9 @@ if seccion == "Estadísticas":
         if option == "Diario":
 
             with col1:
+
+                # Col 1 para maximos (diarios)
+
                 st.subheader("Máximos")
 
                 tabla_max = pd.DataFrame(
@@ -1367,6 +1375,9 @@ if seccion == "Estadísticas":
                 st.dataframe(tabla_max)
 
             with col2:
+
+                # Col 2 para minimos (diarios)
+
                 st.subheader("Mínimos")
 
                 tabla_min = pd.DataFrame(
