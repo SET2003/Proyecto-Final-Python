@@ -629,7 +629,7 @@ if seccion == "Datos":
         datos["Potencia (kW)"] > Pmin, 0
     )
     # Muestro la Tabla (de aca a proximas lineas)
-    st.markdown("## Tabla Cargada")
+    st.markdown("## Tabla Obtenida")
 
     # Genero dos columnas donde la primera es la tabla y ocupa el 70% de la
     # ventana, mientras que la otra la uso para seleccionar fechas
@@ -938,8 +938,9 @@ if seccion == "Estadísticas":
                     "Fecha Formateada")
                 
                     C1P, C2P, C3P, *_ = potencia_media.columns
-                    potencia_media = potencia_media.drop(C1P, axis=1).drop(C2P,
-                                                                        axis=1)
+                    potencia_media = potencia_media.drop(C1P, axis=1).drop(C2P, axis=1)
+                    st.subheader("Potencia", help="""Tabla de valores de la
+                    gráfica anterior""")
 
                     st.write("**Potencia obtenida por semana**")
                     Nombres_col = {
@@ -951,6 +952,8 @@ if seccion == "Estadísticas":
                         column_config=Nombres_col,
                         use_container_width=True,
                     )
+
+                    potencia_media.rename_axis('Fecha', inplace=True)
 
                     # Crear archivo Excel en memoria
                     archivo_temporal_ps = BytesIO()
@@ -1011,6 +1014,8 @@ if seccion == "Estadísticas":
                         column_config=Nombres_col,
                         use_container_width=True,
                     )
+
+                    potencia_media.rename_axis('Fecha', inplace=True)
 
                     # Crear archivo Excel en memoria
                     archivo_temporal_pd = BytesIO()
@@ -1098,6 +1103,9 @@ if seccion == "Estadísticas":
                         use_container_width=True
                     )
 
+                    Energia.rename(columns={'Potencia (kW)': 'Energía (kWh)'}, inplace=True)
+                    Energia.rename_axis('Fecha', inplace=True)
+
                     # Crear archivo Excel en memoria
                     archivo_temporal_es = BytesIO()
                     Energia.to_excel(archivo_temporal_es, index=True)
@@ -1159,6 +1167,7 @@ if seccion == "Estadísticas":
                     )
 
                     Energia.rename(columns={'Potencia (kW)': 'Energía (kWh)'}, inplace=True)
+                    Energia.rename_axis('Fecha', inplace=True)
 
                     # Crear archivo Excel en memoria
                     archivo_temporal_ed = BytesIO()
@@ -1172,7 +1181,7 @@ if seccion == "Estadísticas":
                         file_name="Tabla_con_energía_diaria.xlsx",
                         mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
                         sheet"""
-                    )  
+                    )
 
         #
         # Todo sobre Datos caracteristicos
@@ -1210,6 +1219,22 @@ if seccion == "Estadísticas":
                     use_container_width=True
                 )
 
+                Top_potencias.rename_axis('Fecha', inplace=True)
+
+                # Crear archivo Excel en memoria
+                archivo_temporal_tpd = BytesIO()
+                Top_potencias.to_excel(archivo_temporal_tpd, index=True)
+                archivo_temporal_tpd.seek(0)
+
+                # Botón de descarga
+                st.download_button(
+                    label="Descargar tabla en formato excel",
+                    data=archivo_temporal_tpd,
+                    file_name="Tabla_con_mayores_potencias_diarias.xlsx",
+                    mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                    sheet"""
+                )
+
             if option == "Semanal":
 
                 Top_potencias = potencia_media.sort_values(
@@ -1223,6 +1248,22 @@ if seccion == "Estadísticas":
                 st.dataframe(
                     Top_potencias, column_config=Nombres_col,
                     use_container_width=True
+                )
+
+                Top_potencias.rename_axis('Fecha', inplace=True)
+
+                # Crear archivo Excel en memoria
+                archivo_temporal_tps = BytesIO()
+                Top_potencias.to_excel(archivo_temporal_tps, index=True)
+                archivo_temporal_tps.seek(0)
+
+                # Botón de descarga
+                st.download_button(
+                    label="Descargar tabla en formato excel",
+                    data=archivo_temporal_tps,
+                    file_name="Tabla_con_mayores_potencias_semanales.xlsx",
+                    mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                    sheet"""
                 )
 
         with col2:
@@ -1245,6 +1286,23 @@ if seccion == "Estadísticas":
                     use_container_width=True
                 )
 
+                Top_Energia.rename_axis('Fecha', inplace=True)
+                Top_Energia.rename(columns={'Potencia (kW)': 'Energía (kWh)'}, inplace=True)
+
+                # Crear archivo Excel en memoria
+                archivo_temporal_ted = BytesIO()
+                Top_Energia.to_excel(archivo_temporal_ted, index=True)
+                archivo_temporal_ted.seek(0)
+
+                # Botón de descarga
+                st.download_button(
+                    label="Descargar tabla en formato excel",
+                    data=archivo_temporal_ted,
+                    file_name="Tabla_con_mayores_energías_diarias.xlsx",
+                    mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                    sheet"""
+                )
+
             if option == "Semanal":
 
                 Top_Energia = Energia.sort_values(
@@ -1258,6 +1316,23 @@ if seccion == "Estadísticas":
                 st.dataframe(
                     Top_Energia, column_config=Nombres_col,
                     use_container_width=True
+                )
+
+                Top_Energia.rename_axis('Fecha', inplace=True)
+                Top_Energia.rename(columns={'Potencia (kW)': 'Energía (kWh)'}, inplace=True)
+
+                # Crear archivo Excel en memoria
+                archivo_temporal_tes = BytesIO()
+                Top_Energia.to_excel(archivo_temporal_tes, index=True)
+                archivo_temporal_tes.seek(0)
+
+                # Botón de descarga
+                st.download_button(
+                    label="Descargar tabla en formato excel",
+                    data=archivo_temporal_tes,
+                    file_name="Tabla_con_mayores_enerías_semanales.xlsx",
+                    mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                    sheet"""
                 )
 
         # Apartado de maximos y minimos
@@ -1306,9 +1381,23 @@ if seccion == "Estadísticas":
                 ]
                 st.dataframe(tabla_max)
 
+                # Crear archivo Excel en memoria
+                archivo_temporal_maxs = BytesIO()
+                tabla_max.to_excel(archivo_temporal_maxs, index=True)
+                archivo_temporal_maxs.seek(0)
+
+                # Botón de descarga
+                st.download_button(
+                    label="Descargar tabla en formato excel",
+                    data=archivo_temporal_maxs,
+                    file_name="Tabla_con_máximos_semanales.xlsx",
+                    mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                    sheet"""
+                )
+
             with col2:
                 
-                # Col 1 minimos maximos (semanal)
+                # Col 2 minimos (semanal)
 
                 st.subheader("Mínimos")
 
@@ -1338,6 +1427,20 @@ if seccion == "Estadísticas":
                     "Energía Media Semanal (kWh)",
                 ]
                 st.dataframe(tabla_min)
+
+                # Crear archivo Excel en memoria
+                archivo_temporal_mins = BytesIO()
+                tabla_min.to_excel(archivo_temporal_mins, index=True)
+                archivo_temporal_mins.seek(0)
+
+                # Botón de descarga
+                st.download_button(
+                    label="Descargar tabla en formato excel",
+                    data=archivo_temporal_mins,
+                    file_name="Tabla_con_mínimos_semanales.xlsx",
+                    mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                    sheet"""
+                )
 
         if option == "Diario":
 
@@ -1374,6 +1477,20 @@ if seccion == "Estadísticas":
                 ]
                 st.dataframe(tabla_max)
 
+                # Crear archivo Excel en memoria
+                archivo_temporal_maxd = BytesIO()
+                tabla_max.to_excel(archivo_temporal_maxd, index=True)
+                archivo_temporal_maxd.seek(0)
+
+                # Botón de descarga
+                st.download_button(
+                    label="Descargar tabla en formato excel",
+                    data=archivo_temporal_maxd,
+                    file_name="Tabla_con_máximos_diarios.xlsx",
+                    mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                    sheet"""
+                )
+
             with col2:
 
                 # Col 2 para minimos (diarios)
@@ -1406,6 +1523,20 @@ if seccion == "Estadísticas":
                     "Energía Media Diaria (kWh)",
                 ]
                 st.dataframe(tabla_min)
+
+                # Crear archivo Excel en memoria
+                archivo_temporal_mind = BytesIO()
+                tabla_min.to_excel(archivo_temporal_mind, index=True)
+                archivo_temporal_mind.seek(0)
+
+                # Botón de descarga
+                st.download_button(
+                    label="Descargar tabla en formato excel",
+                    data=archivo_temporal_mind,
+                    file_name="Tabla_con_mínimos_diarios.xlsx",
+                    mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                    sheet"""
+                )
 
 
 # --- Sección 2.3: Mapas ---
