@@ -3,7 +3,7 @@
 # Librerias estándar de Python
 import datetime
 import time
-from datetime import datetime as dt
+# from datetime import datetime as dt
 from io import BytesIO
 
 # Paquetes de terceros
@@ -128,7 +128,6 @@ with st.sidebar:
         open_all=True,
         color="#2aa7e1",
     )
-
 # --------- TEXTO JUSTIFICADO, VARIABLES EN LATEX ---------
 
 # Defino fuera del if correspondiente a 'Acerca de', el texto a usar para el
@@ -461,7 +460,7 @@ if seccion == "Acerca de":
 # --- Sección 2.1: Datos ---
 if seccion == "Datos":
 
-    st.image("Archivos//Imagenes//banner_calculo.jpg")
+    st.image("Archivos//Imagenes//banner_calculo.jpg", use_container_width=True)
     # Todos los datos que tiene que cargar el usuario, utiliza como
     # predeterminados los de la UTN
 
@@ -509,14 +508,10 @@ if seccion == "Datos":
             st.session_state["datos_usuario"] = datos_usuario
 
     if datos_especificos is False:  # No se activó el toggle
-        if "datos_usuario" not in st.session_state:
-            # Si no hay datos especificos en el sesion state
-            datos = st.session_state["datos"]
-            st.session_state["tabla_en_uso"] = "Pred"
-            # Se usa la tabla y datos predeterminados
-        else:
-            datos = st.session_state["datos"]
-            st.session_state["tabla_en_uso"] = "Pred"
+        # Si no hay datos especificos en el sesion state
+        datos = st.session_state["datos"]
+        st.session_state["tabla_en_uso"] = "Pred"
+        # Se usa la tabla y datos predeterminados
     else:
         # Se verifica si los datos cargados son un dataframe
         if isinstance(datos_usuario, pd.DataFrame):
@@ -723,7 +718,6 @@ if seccion == "Datos":
         datos_filtrados = datos.loc[
             fecha_inicial_seleccionado:fecha_final_seleccionado, :
         ]
-        st.session_state["datfil"] = datos_filtrados
         # Muestro la tabla
         st.dataframe(datos_filtrados, use_container_width=True)
 
@@ -752,8 +746,7 @@ if seccion == "Datos":
     #
 
     st.write("# Gráficas")
-    st.info("""Para descargar cualquiera de las gráficas, pulse click derecho
-            y guarde la imagen como png
+    st.info("""Para descargar cualquiera de las gráficas, pulse los tres puntos de la esquina superior derecha y seleccione el formato deseado
             """, icon="ℹ️")
 
     if len(datos_filtrados) > 10000:
@@ -873,10 +866,9 @@ if seccion == "Estadísticas":
         intervalos = intervalos[0]
         # intervalo de tiempo entre índices consecutivos
 
-        st.image("Archivos//Imagenes//banner_est.jpg")
+        st.image("Archivos//Imagenes//banner_est.jpg", use_container_width=True)
         st.header("Gráficas", divider="blue")
-        st.info("""Para descargar cualquiera de las gráficas, pulse click
-                derecho y guarde la imagen como png
+        st.info("""Para descargar cualquiera de las gráficas, pulse los tres puntos de la esquina superior derecha y seleccione el formato deseado
             """, icon="ℹ️")
         # El usuario elige si quiere los datos en días o semanas:
         option = st.selectbox(
@@ -937,470 +929,487 @@ if seccion == "Estadísticas":
                 ],
                 errors="ignore",  # Evita error si la col eliminada no existe
             )  # Filtro fechas y le saco las columnas que no se necesitan
-
             with tab1:
                 # Todo sobre POTENCIA en tab1
 
                 if option == "Semanal":
 
                     # Calculos para potencia SEMANAL
-                    potencia_media_SE = chart_pot.resample(
-                        "W"
-                    ).mean()  # Uso el resample para  tomar las
-                    # semanas y el mean para calcular la media.
-                    # SE significa Sin Editar, es decir, antes de realizar un
-                    # formateo de indice (de igual forma termino utilizandolo
-                    # modificado)
+                    if len(chart_pot.resample("W"))>1:
+                        potencia_media_SE = chart_pot.resample(
+                            "W"
+                        ).mean()  # Uso el resample para  tomar las
+                        # semanas y el mean para calcular la media.
+                        # SE significa Sin Editar, es decir, antes de realizar un
+                        # formateo de indice (de igual forma termino utilizandolo
+                        # modificado)
 
-                    fechas_semanal = potencia_media_SE.index.to_list()
-                    # Convierte el índice en una lista
+                        fechas_semanal = potencia_media_SE.index.to_list()
+                        # Convierte el índice en una lista
 
-                    if fechas_semanal[-1] != fecha_final_est:
-                        fechas_semanal[-1] = fecha_final_est
-                        # Si el último valor de la fechas en forma semanal,
-                        # no es igual al final de la fecha seleccionada, se
-                        # hacen coincidir
+                        if fechas_semanal[-1] != fecha_final_est:
+                            fechas_semanal[-1] = fecha_final_est
+                            # Si el último valor de la fechas en forma semanal,
+                            # no es igual al final de la fecha seleccionada, se
+                            # hacen coincidir
 
-                    potencia_media_SE.index = fechas_semanal
-                    # Ahora se reemplaza el indice de potencias (fechas), por
-                    # las fechas corregidas (que coinciden con seleccionadas)
+                        potencia_media_SE.index = fechas_semanal
+                        # Ahora se reemplaza el indice de potencias (fechas), por
+                        # las fechas corregidas (que coinciden con seleccionadas)
 
-                    new_index = [
-                        f"Week {fecha.year}-{fecha.month}-{fecha.day}"
-                        for fecha in potencia_media_SE.index
-                    ]
-                    # Se define nuevo índice en el formato indicado
-                    indice_no_string = new_index
-                    new_index = pd.DataFrame(new_index, columns=["Fecha"])
-                    # Se transforma la lista de índices a una sola columna de
-                    # un dataframe
-                    potencia_media_SE.index = indice_no_string
-                    potencia_media_SE = potencia_media_SE.reset_index()
-                    # Esto resetea el índice (1,2,...), y convierte el índice
-                    # actual en una columna del df, llamada 'index'
-                    potencia_media_SE["Fecha Formateada"] = potencia_media_SE[
-                        "index"]
-                    # Se le cambia el nombre a 'index' por 'fecha formateada'
-                    grafico = (
-                        alt.Chart(potencia_media_SE)
-                        .mark_bar()  # Gráfico de barras
-                        .encode(
-                            x=alt.X("index:N", sort=new_index, title="Fecha"),
-                            y=alt.Y("Potencia (kW):Q"),
+                        new_index = [
+                            f"Week {fecha.year}-{fecha.month}-{fecha.day}"
+                            for fecha in potencia_media_SE.index
+                        ]
+                        # Se define nuevo índice en el formato indicado
+                        indice_no_string = new_index
+                        new_index = pd.DataFrame(new_index, columns=["Fecha"])
+                        # Se transforma la lista de índices a una sola columna de
+                        # un dataframe
+                        potencia_media_SE.index = indice_no_string
+                        potencia_media_SE = potencia_media_SE.reset_index()
+                        # Esto resetea el índice (1,2,...), y convierte el índice
+                        # actual en una columna del df, llamada 'index'
+                        potencia_media_SE["Fecha Formateada"] = potencia_media_SE[
+                            "index"]
+                        # Se le cambia el nombre a 'index' por 'fecha formateada'
+                        grafico = (
+                            alt.Chart(potencia_media_SE)
+                            .mark_bar()  # Gráfico de barras
+                            .encode(
+                                x=alt.X("index:N", sort=new_index, title="Fecha"),
+                                y=alt.Y("Potencia (kW):Q"),
+                            )
+                            .interactive()
                         )
-                        .interactive()
-                    )
-                    st.altair_chart(grafico, use_container_width=True)
+                        st.altair_chart(grafico, use_container_width=True)
 
-                    potencia_media = potencia_media_SE.set_index(
-                        "Fecha Formateada")
-                    # Se convierte nuevamente el índice a fecha formateada.
-                    C1P, C2P, C3P, *_ = potencia_media.columns
-                    potencia_media = potencia_media.drop(C1P, axis=1).drop(
-                        C2P, axis=1)
-                    # Elimino dos columnas: C1P y C2P
-                    st.subheader("Potencia", help="""Tabla de valores de la
-                    gráfica anterior""")
+                        potencia_media = potencia_media_SE.set_index(
+                            "Fecha Formateada")
+                        # Se convierte nuevamente el índice a fecha formateada.
+                        C1P, C2P, C3P, *_ = potencia_media.columns
+                        potencia_media = potencia_media.drop(C1P, axis=1).drop(
+                            C2P, axis=1)
+                        # Elimino dos columnas: C1P y C2P
+                        st.subheader("Potencia", help="""Tabla de valores de la
+                        gráfica anterior""")
 
-                    st.write("**Potencia obtenida por semana**")
-                    Nombres_col = {
-                        "Fecha Formateada": "Fecha",
-                        "Potencia (kW)": "Potencia [KW]",
-                    }
-                    st.dataframe(
-                        potencia_media,
-                        column_config=Nombres_col,
-                        use_container_width=True,
-                    )
+                        st.write("**Potencia obtenida por semana**")
+                        Nombres_col = {
+                            "Fecha Formateada": "Fecha",
+                            "Potencia (kW)": "Potencia [KW]",
+                        }
+                        st.dataframe(
+                            potencia_media,
+                            column_config=Nombres_col,
+                            use_container_width=True,
+                        )
 
-                    potencia_media.rename_axis('Fecha', inplace=True)
+                        potencia_media.rename_axis('Fecha', inplace=True)
 
-                    # Crear archivo Excel en memoria
-                    archivo_temporal_ps = BytesIO()
-                    potencia_media.to_excel(archivo_temporal_ps, index=True)
-                    archivo_temporal_ps.seek(0)
+                        # Crear archivo Excel en memoria
+                        archivo_temporal_ps = BytesIO()
+                        potencia_media.to_excel(archivo_temporal_ps, index=True)
+                        archivo_temporal_ps.seek(0)
 
-                    # Botón de descarga
-                    st.download_button(
-                        label="Descargar tabla en formato excel",
-                        data=archivo_temporal_ps,
-                        file_name="Tabla_con_potencias_semanales.xlsx",
-                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
-                        sheet"""
-                    )
+                        # Botón de descarga
+                        st.download_button(
+                            label="Descargar tabla en formato excel",
+                            data=archivo_temporal_ps,
+                            file_name="Tabla_con_potencias_semanales.xlsx",
+                            mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                            sheet"""
+                        )
+                    else:
+                        st.warning('Proporcione un intervalo de tiempo mayor a una semana',icon="⚠️")
 
                 if option == "Diario":
 
                     # Calculos para potencia diaria
+                    if len(chart_pot.resample("D"))>1:
+                        potencia_media_SE = chart_pot.resample("D").mean()
+                        # Ahora se calcula la media tomando los días
 
-                    potencia_media_SE = chart_pot.resample("D").mean()
-                    # Ahora se calcula la media tomando los días
+                        potencia_media_SE = potencia_media_SE.reset_index()
+                        potencia_media_SE["Fecha Formateada"] = potencia_media_SE[
+                            "Fecha"
+                        ].dt.strftime("%Y-%m-%d")
 
-                    potencia_media_SE = potencia_media_SE.reset_index()
-                    potencia_media_SE["Fecha Formateada"] = potencia_media_SE[
-                        "Fecha"
-                    ].dt.strftime("%Y-%m-%d")
-
-                    grafico = (
-                        alt.Chart(potencia_media_SE)
-                        .mark_bar()
-                        .encode(
-                            x=alt.X("Fecha Formateada:O", title="Fecha"),
-                            y=alt.Y("Potencia (kW):Q"),
+                        grafico = (
+                            alt.Chart(potencia_media_SE)
+                            .mark_bar()
+                            .encode(
+                                x=alt.X("Fecha Formateada:O", title="Fecha"),
+                                y=alt.Y("Potencia (kW):Q"),
+                            )
+                            .interactive()
                         )
-                        .interactive()
-                    )
 
-                    st.altair_chart(grafico, use_container_width=True)
+                        st.altair_chart(grafico, use_container_width=True)
 
-                    # Aca va la tabla
-                    potencia_media = potencia_media_SE.set_index(
-                        "Fecha Formateada")
-                    C1P, C2P, C3P, *_ = potencia_media.columns
-                    potencia_media = potencia_media.drop(C1P, axis=1).drop(
-                        C2P, axis=1)
+                        # Aca va la tabla
+                        potencia_media = potencia_media_SE.set_index(
+                            "Fecha Formateada")
+                        C1P, C2P, C3P, *_ = potencia_media.columns
+                        potencia_media = potencia_media.drop(C1P, axis=1).drop(
+                            C2P, axis=1)
 
-                    st.subheader("Potencia", help="""Tabla de valores de la
-                    gráfica anterior""")
+                        st.subheader("Potencia", help="""Tabla de valores de la
+                        gráfica anterior""")
 
-                    st.write("**Potencia obtenida por día**")
-                    Nombres_col = {
-                        "Fecha Formateada": "Fecha",
-                        "Potencia (kW)": "Potencia (KW)",
-                    }
-                    st.dataframe(
-                        potencia_media,
-                        column_config=Nombres_col,
-                        use_container_width=True,
-                    )
+                        st.write("**Potencia obtenida por día**")
+                        Nombres_col = {
+                            "Fecha Formateada": "Fecha",
+                            "Potencia (kW)": "Potencia (KW)",
+                        }
+                        st.dataframe(
+                            potencia_media,
+                            column_config=Nombres_col,
+                            use_container_width=True,
+                        )
 
-                    potencia_media.rename_axis('Fecha', inplace=True)
+                        potencia_media.rename_axis('Fecha', inplace=True)
 
-                    # Crear archivo Excel en memoria
-                    archivo_temporal_pd = BytesIO()
-                    potencia_media.to_excel(archivo_temporal_pd, index=True)
-                    archivo_temporal_pd.seek(0)
+                        # Crear archivo Excel en memoria
+                        archivo_temporal_pd = BytesIO()
+                        potencia_media.to_excel(archivo_temporal_pd, index=True)
+                        archivo_temporal_pd.seek(0)
 
-                    # Botón de descarga
-                    st.download_button(
-                        label="Descargar tabla en formato excel",
-                        data=archivo_temporal_pd,
-                        file_name="Tabla_con_potencias_diarias.xlsx",
-                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
-                        sheet"""
-                    )
+                        # Botón de descarga
+                        st.download_button(
+                            label="Descargar tabla en formato excel",
+                            data=archivo_temporal_pd,
+                            file_name="Tabla_con_potencias_diarias.xlsx",
+                            mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                            sheet"""
+                        )
+                    else:
+                        st.warning('Proporcione un intervalo de tiempo mayor a un día',icon="⚠️")
 
             with tab2:
 
                 # Todo sobre ENERGIA en tab2
 
                 if option == "Semanal":
+                    if len(chart_pot.resample("W"))>1:
 
-                    Energia_SE = chart_pot.resample(
-                        "W"
-                    ).mean()  # Uso el resample para tomar las
-                    # semanas y el mean para calcular la media
-                    contador_datos = chart_pot.resample("W").count()
-                    # Cuenta la cantidad de datos por cada semana
-                    contador_datos["contador_datos"] = (
-                        contador_datos["Potencia (kW)"] * intervalos
-                        # A la cantidad de datos de potencia la multiplica por
-                        # el intervalo de tiempo al que corresponde cada dato
-                    )
-                    contador_datos = contador_datos.drop(
-                        columns=["Temperatura de Celda (°C)", "Potencia (kW)"],
-                        errors="ignore",
-                    )
-                    # Se quitan columnas innecesarias
-                    contador_datos = contador_datos.squeeze()
-                    contador_datos = contador_datos.dt.days * 24
-
-                    Energia_SE["Potencia (kW)"] = (
-                        Energia_SE["Potencia (kW)"] * contador_datos
-                    )
-
-                    fechas_semanal = Energia_SE.index.to_list()
-                    # Se hacen coincidir las fechas:
-                    if fechas_semanal[-1] != fecha_final_est:
-                        fechas_semanal[-1] = fecha_final_est
-
-                    Energia_SE.index = fechas_semanal
-
-                    new_index = [
-                        f"Week {fecha.year}-{fecha.month}-{fecha.day}"
-                        for fecha in Energia_SE.index
-                    ]
-                    indice_no_string = new_index
-                    new_index = pd.DataFrame(new_index, columns=["Fecha"])
-
-                    Energia_SE.index = indice_no_string
-                    Energia_SE = Energia_SE.reset_index()
-                    Energia_SE["Fecha Formateada"] = Energia_SE["index"]
-                    grafico = (
-                        alt.Chart(Energia_SE)
-                        .mark_bar(color="yellowgreen")
-                        .encode(
-                            x=alt.X("index:N", sort=new_index, title="Fecha"),
-                            y=alt.Y("Potencia (kW):Q", title="Energía (kWh)"),
+                        Energia_SE = chart_pot.resample(
+                            "W"
+                        ).mean()  # Uso el resample para tomar las
+                        # semanas y el mean para calcular la media
+                        contador_datos = chart_pot.resample("W").count()
+                        # Cuenta la cantidad de datos por cada semana
+                        contador_datos["contador_datos"] = (
+                            contador_datos["Potencia (kW)"] * intervalos
+                            # A la cantidad de datos de potencia la multiplica por
+                            # el intervalo de tiempo al que corresponde cada dato
                         )
-                        .interactive()
-                    )
+                        contador_datos = contador_datos.drop(
+                            columns=["Temperatura de Celda (°C)", "Potencia (kW)"],
+                            errors="ignore",
+                        )
+                        # Se quitan columnas innecesarias
+                        contador_datos = contador_datos.squeeze()
+                        contador_datos = contador_datos.dt.days * 24
+                        Energia_SE["Potencia (kW)"] = (
+                            Energia_SE["Potencia (kW)"] * contador_datos
+                        )
 
-                    st.altair_chart(grafico, use_container_width=True)
+                        fechas_semanal = Energia_SE.index.to_list()
+                        # Se hacen coincidir las fechas:
+                        if fechas_semanal[-1] != fecha_final_est:
+                            fechas_semanal[-1] = fecha_final_est
 
-                    Energia = Energia_SE.set_index("Fecha Formateada")
-                    C1E, C2E, C3E, *_ = Energia.columns
-                    Energia = Energia.drop(C1E, axis=1).drop(C2E, axis=1)
+                        Energia_SE.index = fechas_semanal
 
-                    st.subheader("Energía", help="""Tabla de valores de la
-                    gráfica anterior""")
+                        new_index = [
+                            f"Week {fecha.year}-{fecha.month}-{fecha.day}"
+                            for fecha in Energia_SE.index
+                        ]
+                        indice_no_string = new_index
+                        new_index = pd.DataFrame(new_index, columns=["Fecha"])
 
-                    st.write("**Energía obtenida por semana**")
-                    Nombres_col = {
-                        "Fecha Formateada": "Fecha",
-                        "Potencia (kW)": "Energía (kWh)",
-                    }
-                    st.dataframe(
-                        Energia, column_config=Nombres_col,
-                        use_container_width=True
-                    )
+                        Energia_SE.index = indice_no_string
+                        Energia_SE = Energia_SE.reset_index()
+                        Energia_SE["Fecha Formateada"] = Energia_SE["index"]
+                        grafico = (
+                            alt.Chart(Energia_SE)
+                            .mark_bar(color="yellowgreen")
+                            .encode(
+                                x=alt.X("index:N", sort=new_index, title="Fecha"),
+                                y=alt.Y("Potencia (kW):Q", title="Energía (kWh)"),
+                            )
+                            .interactive()
+                        )
+                        st.altair_chart(grafico, use_container_width=True)
 
-                    Energia.rename(
-                        columns={'Potencia (kW)': 'Energía (kWh)'},
-                        inplace=True)
-                    Energia.rename_axis('Fecha', inplace=True)
+                        Energia = Energia_SE.set_index("Fecha Formateada")
+                        C1E, C2E, C3E, *_ = Energia.columns
+                        Energia = Energia.drop(C1E, axis=1).drop(C2E, axis=1)
 
-                    # Crear archivo Excel en memoria
-                    archivo_temporal_es = BytesIO()
-                    Energia.to_excel(archivo_temporal_es, index=True)
-                    archivo_temporal_es.seek(0)
+                        st.subheader("Energía", help="""Tabla de valores de la
+                        gráfica anterior""")
 
-                    # Botón de descarga
-                    st.download_button(
-                        label="Descargar tabla en formato excel",
-                        data=archivo_temporal_es,
-                        file_name="Tabla_con_energía_semanal.xlsx",
-                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
-                        sheet"""
-                    )
+                        st.write("**Energía obtenida por semana**")
+                        Nombres_col = {
+                            "Fecha Formateada": "Fecha",
+                            "Potencia (kW)": "Energía (kWh)",
+                        }
+                        st.dataframe(
+                            Energia, column_config=Nombres_col,
+                            use_container_width=True
+                        )
+
+                        Energia.rename(
+                            columns={'Potencia (kW)': 'Energía (kWh)'},
+                            inplace=True)
+                        Energia.rename_axis('Fecha', inplace=True)
+
+                        # Crear archivo Excel en memoria
+                        archivo_temporal_es = BytesIO()
+                        Energia.to_excel(archivo_temporal_es, index=True)
+                        archivo_temporal_es.seek(0)
+
+                        # Botón de descarga
+                        st.download_button(
+                            label="Descargar tabla en formato excel",
+                            data=archivo_temporal_es,
+                            file_name="Tabla_con_energía_semanal.xlsx",
+                            mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                            sheet"""
+                        )
+                    else:
+                        st.warning('Proporcione un intervalo de tiempo mayor a una semana',icon="⚠️")
 
                 if option == "Diario":
-
-                    Energia_SE = chart_pot.resample(
-                        "D"
-                    ).mean()  # Uso el resample para calcular tomar los dias y
-                    # el mean para calcular la media
-                    Energia_SE["Potencia (kW)"] = Energia_SE[
-                        "Potencia (kW)"] * 24
-                    Energia_SE = Energia_SE.reset_index()
-                    Energia_SE["Fecha Formateada"] = Energia_SE[
-                        "Fecha"].dt.strftime(
-                        "%Y-%m-%d"
-                    )
-
-                    grafico = (
-                        alt.Chart(Energia_SE)
-                        .mark_bar(color="yellowgreen")
-                        .encode(
-                            x=alt.X("Fecha Formateada:O", title="Fecha"),
-                            y=alt.Y("Potencia (kW):Q", title="Energía (kWh)"),
+                    if len(chart_pot.resample("D"))>1:
+                        Energia_SE = chart_pot.resample(
+                            "D"
+                        ).mean()  # Uso el resample para calcular tomar los dias y
+                        # el mean para calcular la media
+                        Energia_SE["Potencia (kW)"] = Energia_SE[
+                            "Potencia (kW)"] * 24
+                        Energia_SE = Energia_SE.reset_index()
+                        Energia_SE["Fecha Formateada"] = Energia_SE[
+                            "Fecha"].dt.strftime(
+                            "%Y-%m-%d"
                         )
-                        .interactive()
-                    )
 
-                    st.altair_chart(grafico, use_container_width=True)
+                        grafico = (
+                            alt.Chart(Energia_SE)
+                            .mark_bar(color="yellowgreen")
+                            .encode(
+                                x=alt.X("Fecha Formateada:O", title="Fecha"),
+                                y=alt.Y("Potencia (kW):Q", title="Energía (kWh)"),
+                            )
+                            .interactive()
+                        )
 
-                    Energia = Energia_SE.set_index("Fecha Formateada")
-                    C1E, C2E, C3E, *_ = Energia.columns
-                    Energia = Energia.drop(C1E, axis=1).drop(C2E, axis=1)
+                        st.altair_chart(grafico, use_container_width=True)
 
-                    st.subheader("Energía", help="""Tabla de valores de la
-                    gráfica anterior""")
+                        Energia = Energia_SE.set_index("Fecha Formateada")
+                        C1E, C2E, C3E, *_ = Energia.columns
+                        Energia = Energia.drop(C1E, axis=1).drop(C2E, axis=1)
 
-                    Top_Energia = Energia.sort_values(
-                        by="Potencia (kW)", ascending=False
-                    )
-                    st.markdown("**Energía obtenida por día**")
-                    Nombres_col = {
-                        "Fecha Formateada": "Fecha",
-                        "Potencia (kW)": "Energía (kWh)",
-                    }
-                    st.dataframe(
-                        Energia, column_config=Nombres_col,
-                        use_container_width=True
-                    )
+                        st.subheader("Energía", help="""Tabla de valores de la
+                        gráfica anterior""")
 
-                    Energia.rename(
-                        columns={'Potencia (kW)': 'Energía (kWh)'},
-                        inplace=True)
-                    Energia.rename_axis('Fecha', inplace=True)
+                        Top_Energia = Energia.sort_values(
+                            by="Potencia (kW)", ascending=False
+                        )
+                        st.markdown("**Energía obtenida por día**")
+                        Nombres_col = {
+                            "Fecha Formateada": "Fecha",
+                            "Potencia (kW)": "Energía (kWh)",
+                        }
+                        st.dataframe(
+                            Energia, column_config=Nombres_col,
+                            use_container_width=True
+                        )
 
-                    # Crear archivo Excel en memoria
-                    archivo_temporal_ed = BytesIO()
-                    Energia.to_excel(archivo_temporal_ed, index=True)
-                    archivo_temporal_ed.seek(0)
+                        Energia.rename(
+                            columns={'Potencia (kW)': 'Energía (kWh)'},
+                            inplace=True)
+                        Energia.rename_axis('Fecha', inplace=True)
 
-                    # Botón de descarga
-                    st.download_button(
-                        label="Descargar tabla en formato excel",
-                        data=archivo_temporal_ed,
-                        file_name="Tabla_con_energía_diaria.xlsx",
-                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
-                        sheet"""
-                    )
+                        # Crear archivo Excel en memoria
+                        archivo_temporal_ed = BytesIO()
+                        Energia.to_excel(archivo_temporal_ed, index=True)
+                        archivo_temporal_ed.seek(0)
 
+                        # Botón de descarga
+                        st.download_button(
+                            label="Descargar tabla en formato excel",
+                            data=archivo_temporal_ed,
+                            file_name="Tabla_con_energía_diaria.xlsx",
+                            mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                            sheet"""
+                        )
+                    else:
+                        st.warning('Proporcione un intervalo de tiempo mayor a un día',icon="⚠️")
         #
         # Todo sobre Datos caracteristicos
         #
 
         st.header("Datos característicos", divider="red")
+        if option == "Diario":
+            if len(chart_pot.resample("D"))>1:
+                Energia = Energia_SE.set_index("Fecha Formateada")
+                C1E, C2E, C3E, *_ = Energia.columns
+                Energia = Energia.drop(C1E, axis=1).drop(C2E, axis=1)
+                potencia_media = potencia_media_SE.set_index("Fecha Formateada")
+                C1P, C2P, C3P, *_ = potencia_media.columns
+                potencia_media = potencia_media.drop(C1P, axis=1).drop(C2P, axis=1)
+        
+        if option == "Semanal":
+            if len(chart_pot.resample("w"))>1:
+                Energia = Energia_SE.set_index("Fecha Formateada")
+                C1E, C2E, C3E, *_ = Energia.columns
+                Energia = Energia.drop(C1E, axis=1).drop(C2E, axis=1)
+                potencia_media = potencia_media_SE.set_index("Fecha Formateada")
+                C1P, C2P, C3P, *_ = potencia_media.columns
+                potencia_media = potencia_media.drop(C1P, axis=1).drop(C2P, axis=1)
 
         col1, col2 = st.columns([0.5, 0.5], gap="large")
-        Energia = Energia_SE.set_index("Fecha Formateada")
-        C1E, C2E, C3E, *_ = Energia.columns
-        Energia = Energia.drop(C1E, axis=1).drop(C2E, axis=1)
-        potencia_media = potencia_media_SE.set_index("Fecha Formateada")
-        C1P, C2P, C3P, *_ = potencia_media.columns
-        potencia_media = potencia_media.drop(C1P, axis=1).drop(C2P, axis=1)
         with col1:
             # Potencias en col1
 
             st.markdown("### Potencia")
             if option == "Diario":
+                if len(chart_pot.resample("D"))>1:
+                    Top_potencias = potencia_media.sort_values(
+                        by="Potencia (kW)", ascending=False
+                    ).head(10)
+                    st.write("**Días de mayor Potencia obtenida**")
+                    Nombres_col = {
+                        "Fecha Formateada": "Fecha",
+                        "Potencia (kW)": "Potencia (KW)",
+                    }
+                    st.dataframe(
+                        Top_potencias, column_config=Nombres_col,
+                        use_container_width=True
+                    )
 
-                Top_potencias = potencia_media.sort_values(
-                    by="Potencia (kW)", ascending=False
-                ).head(10)
-                st.write("**Días de mayor Potencia obtenida**")
-                Nombres_col = {
-                    "Fecha Formateada": "Fecha",
-                    "Potencia (kW)": "Potencia (KW)",
-                }
-                st.dataframe(
-                    Top_potencias, column_config=Nombres_col,
-                    use_container_width=True
-                )
+                    Top_potencias.rename_axis('Fecha', inplace=True)
 
-                Top_potencias.rename_axis('Fecha', inplace=True)
+                    # Crear archivo Excel en memoria
+                    archivo_temporal_tpd = BytesIO()
+                    Top_potencias.to_excel(archivo_temporal_tpd, index=True)
+                    archivo_temporal_tpd.seek(0)
 
-                # Crear archivo Excel en memoria
-                archivo_temporal_tpd = BytesIO()
-                Top_potencias.to_excel(archivo_temporal_tpd, index=True)
-                archivo_temporal_tpd.seek(0)
-
-                # Botón de descarga
-                st.download_button(
-                    label="Descargar tabla en formato excel",
-                    data=archivo_temporal_tpd,
-                    file_name="Tabla_con_mayores_potencias_diarias.xlsx",
-                    mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
-                    sheet"""
-                )
+                    # Botón de descarga
+                    st.download_button(
+                        label="Descargar tabla en formato excel",
+                        data=archivo_temporal_tpd,
+                        file_name="Tabla_con_mayores_potencias_diarias.xlsx",
+                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                        sheet"""
+                    )
 
             if option == "Semanal":
+                if len(chart_pot.resample("W"))>1:
+                    Top_potencias = potencia_media.sort_values(
+                        by="Potencia (kW)", ascending=False
+                    ).head(10)
+                    st.write("**Semanas de mayor Potencia obtenida**")
+                    Nombres_col = {
+                        "Fecha Formateada": "Fecha",
+                        "Potencia (kW)": "Potencia [KW]",
+                    }
+                    st.dataframe(
+                        Top_potencias, column_config=Nombres_col,
+                        use_container_width=True
+                    )
 
-                Top_potencias = potencia_media.sort_values(
-                    by="Potencia (kW)", ascending=False
-                ).head(10)
-                st.write("**Semanas de mayor Potencia obtenida**")
-                Nombres_col = {
-                    "Fecha Formateada": "Fecha",
-                    "Potencia (kW)": "Potencia [KW]",
-                }
-                st.dataframe(
-                    Top_potencias, column_config=Nombres_col,
-                    use_container_width=True
-                )
+                    Top_potencias.rename_axis('Fecha', inplace=True)
 
-                Top_potencias.rename_axis('Fecha', inplace=True)
+                    # Crear archivo Excel en memoria
+                    archivo_temporal_tps = BytesIO()
+                    Top_potencias.to_excel(archivo_temporal_tps, index=True)
+                    archivo_temporal_tps.seek(0)
 
-                # Crear archivo Excel en memoria
-                archivo_temporal_tps = BytesIO()
-                Top_potencias.to_excel(archivo_temporal_tps, index=True)
-                archivo_temporal_tps.seek(0)
-
-                # Botón de descarga
-                st.download_button(
-                    label="Descargar tabla en formato excel",
-                    data=archivo_temporal_tps,
-                    file_name="Tabla_con_mayores_potencias_semanales.xlsx",
-                    mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
-                    sheet"""
-                )
+                    # Botón de descarga
+                    st.download_button(
+                        label="Descargar tabla en formato excel",
+                        data=archivo_temporal_tps,
+                        file_name="Tabla_con_mayores_potencias_semanales.xlsx",
+                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                        sheet"""
+                    )
 
         with col2:
 
             # Energia en col2
             st.markdown("### Energía")
             if option == "Diario":
-
-                Top_Energia = Energia.sort_values(
-                    by="Potencia (kW)", ascending=False
-                ).head(10)
-                st.markdown("**Días de mayor Energía obtenida**")
-                Nombres_col = {
-                    "Fecha Formateada": "Fecha",
-                    "Potencia (kW)": "Energía (kWh)",
-                }
-                st.dataframe(
-                    Top_Energia, column_config=Nombres_col,
-                    use_container_width=True
-                )
-
-                Top_Energia.rename_axis('Fecha', inplace=True)
-                Top_Energia.rename(
-                    columns={'Potencia (kW)': 'Energía (kWh)'},
-                    inplace=True
+                if len(chart_pot.resample("D"))>1:
+                    Top_Energia = Energia.sort_values(
+                        by="Potencia (kW)", ascending=False
+                    ).head(10)
+                    st.markdown("**Días de mayor Energía obtenida**")
+                    Nombres_col = {
+                        "Fecha Formateada": "Fecha",
+                        "Potencia (kW)": "Energía (kWh)",
+                    }
+                    st.dataframe(
+                        Top_Energia, column_config=Nombres_col,
+                        use_container_width=True
                     )
 
-                # Crear archivo Excel en memoria
-                archivo_temporal_ted = BytesIO()
-                Top_Energia.to_excel(archivo_temporal_ted, index=True)
-                archivo_temporal_ted.seek(0)
+                    Top_Energia.rename_axis('Fecha', inplace=True)
+                    Top_Energia.rename(
+                        columns={'Potencia (kW)': 'Energía (kWh)'},
+                        inplace=True
+                        )
 
-                # Botón de descarga
-                st.download_button(
-                    label="Descargar tabla en formato excel",
-                    data=archivo_temporal_ted,
-                    file_name="Tabla_con_mayores_energías_diarias.xlsx",
-                    mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
-                    sheet"""
-                )
+                    # Crear archivo Excel en memoria
+                    archivo_temporal_ted = BytesIO()
+                    Top_Energia.to_excel(archivo_temporal_ted, index=True)
+                    archivo_temporal_ted.seek(0)
+
+                    # Botón de descarga
+                    st.download_button(
+                        label="Descargar tabla en formato excel",
+                        data=archivo_temporal_ted,
+                        file_name="Tabla_con_mayores_energías_diarias.xlsx",
+                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                        sheet"""
+                    )
 
             if option == "Semanal":
-
-                Top_Energia = Energia.sort_values(
-                    by="Potencia (kW)", ascending=False
-                ).head(10)
-                st.write("**Semanas de mayor Energía obtenida**")
-                Nombres_col = {
-                    "Fecha Formateada": "Fecha",
-                    "Potencia (kW)": "Energía (kWh)",
-                }
-                st.dataframe(
-                    Top_Energia, column_config=Nombres_col,
-                    use_container_width=True
-                )
-
-                Top_Energia.rename_axis('Fecha', inplace=True)
-                Top_Energia.rename(
-                    columns={'Potencia (kW)': 'Energía (kWh)'},
-                    inplace=True
+                if len(chart_pot.resample("W"))>1:
+                    Top_Energia = Energia.sort_values(
+                        by="Potencia (kW)", ascending=False
+                    ).head(10)
+                    st.write("**Semanas de mayor Energía obtenida**")
+                    Nombres_col = {
+                        "Fecha Formateada": "Fecha",
+                        "Potencia (kW)": "Energía (kWh)",
+                    }
+                    st.dataframe(
+                        Top_Energia, column_config=Nombres_col,
+                        use_container_width=True
                     )
 
-                # Crear archivo Excel en memoria
-                archivo_temporal_tes = BytesIO()
-                Top_Energia.to_excel(archivo_temporal_tes, index=True)
-                archivo_temporal_tes.seek(0)
+                    Top_Energia.rename_axis('Fecha', inplace=True)
+                    Top_Energia.rename(
+                        columns={'Potencia (kW)': 'Energía (kWh)'},
+                        inplace=True
+                        )
 
-                # Botón de descarga
-                st.download_button(
-                    label="Descargar tabla en formato excel",
-                    data=archivo_temporal_tes,
-                    file_name="Tabla_con_mayores_enerías_semanales.xlsx",
-                    mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
-                    sheet"""
-                )
+                    # Crear archivo Excel en memoria
+                    archivo_temporal_tes = BytesIO()
+                    Top_Energia.to_excel(archivo_temporal_tes, index=True)
+                    archivo_temporal_tes.seek(0)
+
+                    # Botón de descarga
+                    st.download_button(
+                        label="Descargar tabla en formato excel",
+                        data=archivo_temporal_tes,
+                        file_name="Tabla_con_mayores_enerías_semanales.xlsx",
+                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                        sheet"""
+                    )
 
         # Apartado de maximos y minimos
 
@@ -1414,199 +1423,199 @@ if seccion == "Estadísticas":
         )
 
         if option == "Semanal":
+            if len(chart_pot.resample("W"))>1:
+                with col1:
+                    # Col 1 para maximos (semanal)
 
-            with col1:
-                # Col 1 para maximos (semanal)
+                    st.subheader("Máximos")
 
-                st.subheader("Máximos")
+                    tabla_max = pd.DataFrame(
+                        {
+                            "Fecha": [
+                                datfil["Temperatura (°C)"].idxmax(),
+                                datfil["Irradiancia (W/m²)"].idxmax(),
+                                datfil["Potencia (kW)"].idxmax(),
+                                potencia_media["Potencia (kW)"].idxmax(),
+                                Energia["Potencia (kW)"].idxmax(),
+                            ],
+                            "Máximo": [
+                                datfil["Temperatura (°C)"].max(),
+                                datfil["Irradiancia (W/m²)"].max(),
+                                datfil["Potencia (kW)"].max(),
+                                potencia_media["Potencia (kW)"].max(),
+                                Energia["Potencia (kW)"].max(),
+                            ],
+                        }
+                    )
+                    tabla_max.index = [
+                        "Temperatura (°C)",
+                        "Irradiancia (W/m²)",
+                        "Potencia (kW)",
+                        "Potencia Media Semanal (kW)",
+                        "Energía Media Semanal (kWh)",
+                    ]
+                    st.dataframe(tabla_max)
 
-                tabla_max = pd.DataFrame(
-                    {
-                        "Fecha": [
-                            datfil["Temperatura (°C)"].idxmax(),
-                            datfil["Irradiancia (W/m²)"].idxmax(),
-                            datfil["Potencia (kW)"].idxmax(),
-                            potencia_media["Potencia (kW)"].idxmax(),
-                            Energia["Potencia (kW)"].idxmax(),
-                        ],
-                        "Máximo": [
-                            datfil["Temperatura (°C)"].max(),
-                            datfil["Irradiancia (W/m²)"].max(),
-                            datfil["Potencia (kW)"].max(),
-                            potencia_media["Potencia (kW)"].max(),
-                            Energia["Potencia (kW)"].max(),
-                        ],
-                    }
-                )
-                tabla_max.index = [
-                    "Temperatura (°C)",
-                    "Irradiancia (W/m²)",
-                    "Potencia (kW)",
-                    "Potencia Media Semanal (kW)",
-                    "Energía Media Semanal (kWh)",
-                ]
-                st.dataframe(tabla_max)
+                    # Crear archivo Excel en memoria
+                    archivo_temporal_maxs = BytesIO()
+                    tabla_max.to_excel(archivo_temporal_maxs, index=True)
+                    archivo_temporal_maxs.seek(0)
 
-                # Crear archivo Excel en memoria
-                archivo_temporal_maxs = BytesIO()
-                tabla_max.to_excel(archivo_temporal_maxs, index=True)
-                archivo_temporal_maxs.seek(0)
+                    # Botón de descarga
+                    st.download_button(
+                        label="Descargar tabla en formato excel",
+                        data=archivo_temporal_maxs,
+                        file_name="Tabla_con_máximos_semanales.xlsx",
+                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                        sheet"""
+                    )
 
-                # Botón de descarga
-                st.download_button(
-                    label="Descargar tabla en formato excel",
-                    data=archivo_temporal_maxs,
-                    file_name="Tabla_con_máximos_semanales.xlsx",
-                    mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
-                    sheet"""
-                )
+                with col2:
+                    # Col 2 minimos (semanal)
 
-            with col2:
-                # Col 2 minimos (semanal)
+                    st.subheader("Mínimos")
 
-                st.subheader("Mínimos")
+                    tabla_min = pd.DataFrame(
+                        {
+                            "Fecha": [
+                                datfil["Temperatura (°C)"].idxmin(),
+                                datfil["Irradiancia (W/m²)"].idxmin(),
+                                datfil["Potencia (kW)"].idxmin(),
+                                potencia_media["Potencia (kW)"].idxmin(),
+                                Energia["Potencia (kW)"].idxmin(),
+                            ],
+                            "Mínimo": [
+                                datfil["Temperatura (°C)"].min(),
+                                datfil["Irradiancia (W/m²)"].min(),
+                                datfil["Potencia (kW)"].min(),
+                                potencia_media["Potencia (kW)"].min(),
+                                Energia["Potencia (kW)"].min(),
+                            ],
+                        }
+                    )
+                    tabla_min.index = [
+                        "Temperatura (°C)",
+                        "Irradiancia (W/m²)",
+                        "Potencia (kW)",
+                        "Potencia Media Semanal (kW)",
+                        "Energía Media Semanal (kWh)",
+                    ]
+                    st.dataframe(tabla_min)
 
-                tabla_min = pd.DataFrame(
-                    {
-                        "Fecha": [
-                            datfil["Temperatura (°C)"].idxmin(),
-                            datfil["Irradiancia (W/m²)"].idxmin(),
-                            datfil["Potencia (kW)"].idxmin(),
-                            potencia_media["Potencia (kW)"].idxmin(),
-                            Energia["Potencia (kW)"].idxmin(),
-                        ],
-                        "Mínimo": [
-                            datfil["Temperatura (°C)"].min(),
-                            datfil["Irradiancia (W/m²)"].min(),
-                            datfil["Potencia (kW)"].min(),
-                            potencia_media["Potencia (kW)"].min(),
-                            Energia["Potencia (kW)"].min(),
-                        ],
-                    }
-                )
-                tabla_min.index = [
-                    "Temperatura (°C)",
-                    "Irradiancia (W/m²)",
-                    "Potencia (kW)",
-                    "Potencia Media Semanal (kW)",
-                    "Energía Media Semanal (kWh)",
-                ]
-                st.dataframe(tabla_min)
+                    # Crear archivo Excel en memoria
+                    archivo_temporal_mins = BytesIO()
+                    tabla_min.to_excel(archivo_temporal_mins, index=True)
+                    archivo_temporal_mins.seek(0)
 
-                # Crear archivo Excel en memoria
-                archivo_temporal_mins = BytesIO()
-                tabla_min.to_excel(archivo_temporal_mins, index=True)
-                archivo_temporal_mins.seek(0)
-
-                # Botón de descarga
-                st.download_button(
-                    label="Descargar tabla en formato excel",
-                    data=archivo_temporal_mins,
-                    file_name="Tabla_con_mínimos_semanales.xlsx",
-                    mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
-                    sheet"""
-                )
+                    # Botón de descarga
+                    st.download_button(
+                        label="Descargar tabla en formato excel",
+                        data=archivo_temporal_mins,
+                        file_name="Tabla_con_mínimos_semanales.xlsx",
+                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                        sheet"""
+                    )
 
         if option == "Diario":
+            if len(chart_pot.resample("D"))>1:
+                with col1:
 
-            with col1:
+                    # Col 1 para maximos (diarios)
 
-                # Col 1 para maximos (diarios)
+                    st.subheader("Máximos")
 
-                st.subheader("Máximos")
+                    tabla_max = pd.DataFrame(
+                        {
+                            "Fecha": [
+                                datfil["Temperatura (°C)"].idxmax(),
+                                datfil["Irradiancia (W/m²)"].idxmax(),
+                                datfil["Potencia (kW)"].idxmax(),
+                                potencia_media["Potencia (kW)"].idxmax(),
+                                Energia["Potencia (kW)"].idxmax(),
+                            ],
+                            "Máximo": [
+                                datfil["Temperatura (°C)"].max(),
+                                datfil["Irradiancia (W/m²)"].max(),
+                                datfil["Potencia (kW)"].max(),
+                                potencia_media["Potencia (kW)"].max(),
+                                Energia["Potencia (kW)"].max(),
+                            ],
+                        }
+                    )
+                    tabla_max.index = [
+                        "Temperatura (°C)",
+                        "Irradiancia (W/m²)",
+                        "Potencia (kW)",
+                        "Potencia Media Diaria (kW)",
+                        "Energía Media Diaria (kWh)",
+                    ]
+                    st.dataframe(tabla_max)
 
-                tabla_max = pd.DataFrame(
-                    {
-                        "Fecha": [
-                            datfil["Temperatura (°C)"].idxmax(),
-                            datfil["Irradiancia (W/m²)"].idxmax(),
-                            datfil["Potencia (kW)"].idxmax(),
-                            potencia_media["Potencia (kW)"].idxmax(),
-                            Energia["Potencia (kW)"].idxmax(),
-                        ],
-                        "Máximo": [
-                            datfil["Temperatura (°C)"].max(),
-                            datfil["Irradiancia (W/m²)"].max(),
-                            datfil["Potencia (kW)"].max(),
-                            potencia_media["Potencia (kW)"].max(),
-                            Energia["Potencia (kW)"].max(),
-                        ],
-                    }
-                )
-                tabla_max.index = [
-                    "Temperatura (°C)",
-                    "Irradiancia (W/m²)",
-                    "Potencia (kW)",
-                    "Potencia Media Diaria (kW)",
-                    "Energía Media Diaria (kWh)",
-                ]
-                st.dataframe(tabla_max)
+                    # Crear archivo Excel en memoria
+                    archivo_temporal_maxd = BytesIO()
+                    tabla_max.to_excel(archivo_temporal_maxd, index=True)
+                    archivo_temporal_maxd.seek(0)
 
-                # Crear archivo Excel en memoria
-                archivo_temporal_maxd = BytesIO()
-                tabla_max.to_excel(archivo_temporal_maxd, index=True)
-                archivo_temporal_maxd.seek(0)
+                    # Botón de descarga
+                    st.download_button(
+                        label="Descargar tabla en formato excel",
+                        data=archivo_temporal_maxd,
+                        file_name="Tabla_con_máximos_diarios.xlsx",
+                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                        sheet"""
+                    )
 
-                # Botón de descarga
-                st.download_button(
-                    label="Descargar tabla en formato excel",
-                    data=archivo_temporal_maxd,
-                    file_name="Tabla_con_máximos_diarios.xlsx",
-                    mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
-                    sheet"""
-                )
+                with col2:
 
-            with col2:
+                    # Col 2 para minimos (diarios)
 
-                # Col 2 para minimos (diarios)
+                    st.subheader("Mínimos")
 
-                st.subheader("Mínimos")
+                    tabla_min = pd.DataFrame(
+                        {
+                            "Fecha": [
+                                datfil["Temperatura (°C)"].idxmin(),
+                                datfil["Irradiancia (W/m²)"].idxmin(),
+                                datfil["Potencia (kW)"].idxmin(),
+                                potencia_media["Potencia (kW)"].idxmin(),
+                                Energia["Potencia (kW)"].idxmin(),
+                            ],
+                            "Mínimo": [
+                                datfil["Temperatura (°C)"].min(),
+                                datfil["Irradiancia (W/m²)"].min(),
+                                datfil["Potencia (kW)"].min(),
+                                potencia_media["Potencia (kW)"].min(),
+                                Energia["Potencia (kW)"].min(),
+                            ],
+                        }
+                    )
+                    tabla_min.index = [
+                        "Temperatura (°C)",
+                        "Irradiancia (W/m²)",
+                        "Potencia (kW)",
+                        "Potencia Media Diaria (kW)",
+                        "Energía Media Diaria (kWh)",
+                    ]
+                    st.dataframe(tabla_min)
 
-                tabla_min = pd.DataFrame(
-                    {
-                        "Fecha": [
-                            datfil["Temperatura (°C)"].idxmin(),
-                            datfil["Irradiancia (W/m²)"].idxmin(),
-                            datfil["Potencia (kW)"].idxmin(),
-                            potencia_media["Potencia (kW)"].idxmin(),
-                            Energia["Potencia (kW)"].idxmin(),
-                        ],
-                        "Mínimo": [
-                            datfil["Temperatura (°C)"].min(),
-                            datfil["Irradiancia (W/m²)"].min(),
-                            datfil["Potencia (kW)"].min(),
-                            potencia_media["Potencia (kW)"].min(),
-                            Energia["Potencia (kW)"].min(),
-                        ],
-                    }
-                )
-                tabla_min.index = [
-                    "Temperatura (°C)",
-                    "Irradiancia (W/m²)",
-                    "Potencia (kW)",
-                    "Potencia Media Diaria (kW)",
-                    "Energía Media Diaria (kWh)",
-                ]
-                st.dataframe(tabla_min)
+                    # Crear archivo Excel en memoria
+                    archivo_temporal_mind = BytesIO()
+                    tabla_min.to_excel(archivo_temporal_mind, index=True)
+                    archivo_temporal_mind.seek(0)
 
-                # Crear archivo Excel en memoria
-                archivo_temporal_mind = BytesIO()
-                tabla_min.to_excel(archivo_temporal_mind, index=True)
-                archivo_temporal_mind.seek(0)
-
-                # Botón de descarga
-                st.download_button(
-                    label="Descargar tabla en formato excel",
-                    data=archivo_temporal_mind,
-                    file_name="Tabla_con_mínimos_diarios.xlsx",
-                    mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
-                    sheet"""
-                )
+                    # Botón de descarga
+                    st.download_button(
+                        label="Descargar tabla en formato excel",
+                        data=archivo_temporal_mind,
+                        file_name="Tabla_con_mínimos_diarios.xlsx",
+                        mime="""application/vnd.openxmlformats-officedocument.spreadsheetml.
+                        sheet"""
+                    )
 
 
 # --- Sección 2.3: Mapas ---
 if seccion == "Mapas":
-    st.image("Archivos//Imagenes//banner_mapa.jpg")
+    st.image("Archivos//Imagenes//banner_mapa.jpg", use_container_width=True)
     st.info(
         """Cargue la ubicación del GFV analizado, si no ingresa ningún
             valor se mostrará por defecto la ubicación de los paneles de la
@@ -1764,7 +1773,7 @@ if seccion == "Ayuda":
         """
             1. *Guía de la página*
             2. *Definiciones y glosario de términos*
-            3. *Preguntas frecuentes (FAQ's)*
+            3. *Preguntas frecuentes (FAQs)*
             4. *Otro*
             """
     texto = st.chat_input("Escriba aquí...")
@@ -1976,7 +1985,10 @@ if seccion == "Ayuda":
                 texto_parcial = texto_parcial + word + " "
                 texto_placeholder.markdown(texto_parcial)
                 time.sleep(0.013)
-
+        
+    if texto == 'pascuas':
+            st.link_button("Trust me","https://matias.me/nsfw/", icon='🥚' )
+ 
 
 # --- Sección 4: Feedback ---
 if seccion == "Feedback":
