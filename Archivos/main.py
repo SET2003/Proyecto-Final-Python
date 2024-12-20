@@ -3,7 +3,6 @@
 # Librerias estándar de Python
 import datetime
 import time
-# from datetime import datetime as dt
 from io import BytesIO
 
 # Paquetes de terceros
@@ -460,7 +459,9 @@ if seccion == "Acerca de":
 # --- Sección 2.1: Datos ---
 if seccion == "Datos":
 
-    st.image("Archivos//Imagenes//banner_calculo.jpg", use_container_width=True)
+    st.image(
+        "Archivos//Imagenes//banner_calculo.jpg",
+        use_container_width=True)
     # Todos los datos que tiene que cargar el usuario, utiliza como
     # predeterminados los de la UTN
 
@@ -746,8 +747,9 @@ if seccion == "Datos":
     #
 
     st.write("# Gráficas")
-    st.info("""Para descargar cualquiera de las gráficas, pulse los tres puntos de la esquina superior derecha y seleccione el formato deseado
-            """, icon="ℹ️")
+    st.info("""Para descargar cualquiera de las gráficas, pulse los tres
+    puntos de la esquina superior derecha y seleccione el formato deseado
+    """, icon="ℹ️")
 
     if len(datos_filtrados) > 10000:
         st.warning(
@@ -866,10 +868,14 @@ if seccion == "Estadísticas":
         intervalos = intervalos[0]
         # intervalo de tiempo entre índices consecutivos
 
-        st.image("Archivos//Imagenes//banner_est.jpg", use_container_width=True)
+        st.image(
+            "Archivos//Imagenes//banner_est.jpg",
+            use_container_width=True
+            )
         st.header("Gráficas", divider="blue")
-        st.info("""Para descargar cualquiera de las gráficas, pulse los tres puntos de la esquina superior derecha y seleccione el formato deseado
-            """, icon="ℹ️")
+        st.info("""Para descargar cualquiera de las gráficas, pulse los tres
+        puntos de la esquina superior derecha y seleccione el formato deseado
+        """, icon="ℹ️")
         # El usuario elige si quiere los datos en días o semanas:
         option = st.selectbox(
             "Seleccione el período de tiempo deseado",
@@ -935,14 +941,14 @@ if seccion == "Estadísticas":
                 if option == "Semanal":
 
                     # Calculos para potencia SEMANAL
-                    if len(chart_pot.resample("W"))>1:
+                    if len(chart_pot.resample("W")) > 1:
                         potencia_media_SE = chart_pot.resample(
                             "W"
                         ).mean()  # Uso el resample para  tomar las
                         # semanas y el mean para calcular la media.
-                        # SE significa Sin Editar, es decir, antes de realizar un
-                        # formateo de indice (de igual forma termino utilizandolo
-                        # modificado)
+                        # SE significa Sin Editar, es decir, antes de realizar
+                        # un formateo de indice (de igual forma termino
+                        # utilizandolo modificado)
 
                         fechas_semanal = potencia_media_SE.index.to_list()
                         # Convierte el índice en una lista
@@ -954,8 +960,9 @@ if seccion == "Estadísticas":
                             # hacen coincidir
 
                         potencia_media_SE.index = fechas_semanal
-                        # Ahora se reemplaza el indice de potencias (fechas), por
-                        # las fechas corregidas (que coinciden con seleccionadas)
+                        # Ahora se reemplaza el indice de potencias (fechas),
+                        # por las fechas corregidas (que coinciden con
+                        # seleccionadas)
 
                         new_index = [
                             f"Week {fecha.year}-{fecha.month}-{fecha.day}"
@@ -964,20 +971,24 @@ if seccion == "Estadísticas":
                         # Se define nuevo índice en el formato indicado
                         indice_no_string = new_index
                         new_index = pd.DataFrame(new_index, columns=["Fecha"])
-                        # Se transforma la lista de índices a una sola columna de
-                        # un dataframe
+                        # Se transforma la lista de índices a una sola columna
+                        # de un dataframe
                         potencia_media_SE.index = indice_no_string
                         potencia_media_SE = potencia_media_SE.reset_index()
-                        # Esto resetea el índice (1,2,...), y convierte el índice
-                        # actual en una columna del df, llamada 'index'
-                        potencia_media_SE["Fecha Formateada"] = potencia_media_SE[
-                            "index"]
-                        # Se le cambia el nombre a 'index' por 'fecha formateada'
+                        # Esto resetea el índice (1,2,...), y convierte el
+                        # índice actual en una columna del df, llamada 'index'
+                        potencia_media_SE["Fecha Formateada"] = (
+                            potencia_media_SE["index"])
+                        # Se le cambia el nombre a 'index' por 'fecha
+                        # formateada'
                         grafico = (
                             alt.Chart(potencia_media_SE)
                             .mark_bar()  # Gráfico de barras
                             .encode(
-                                x=alt.X("index:N", sort=new_index, title="Fecha"),
+                                x=alt.X(
+                                    "index:N",
+                                    sort=new_index,
+                                    title="Fecha"),
                                 y=alt.Y("Potencia (kW):Q"),
                             )
                             .interactive()
@@ -1009,7 +1020,10 @@ if seccion == "Estadísticas":
 
                         # Crear archivo Excel en memoria
                         archivo_temporal_ps = BytesIO()
-                        potencia_media.to_excel(archivo_temporal_ps, index=True)
+                        potencia_media.to_excel(
+                            archivo_temporal_ps,
+                            index=True
+                            )
                         archivo_temporal_ps.seek(0)
 
                         # Botón de descarga
@@ -1021,19 +1035,20 @@ if seccion == "Estadísticas":
                             sheet"""
                         )
                     else:
-                        st.warning('Proporcione un intervalo de tiempo mayor a una semana',icon="⚠️")
+                        st.warning("""Proporcione un intervalo de tiempo mayor
+                        a una semana""", icon="⚠️")
 
                 if option == "Diario":
 
                     # Calculos para potencia diaria
-                    if len(chart_pot.resample("D"))>1:
+                    if len(chart_pot.resample("D")) > 1:
                         potencia_media_SE = chart_pot.resample("D").mean()
                         # Ahora se calcula la media tomando los días
 
                         potencia_media_SE = potencia_media_SE.reset_index()
-                        potencia_media_SE["Fecha Formateada"] = potencia_media_SE[
-                            "Fecha"
-                        ].dt.strftime("%Y-%m-%d")
+                        potencia_media_SE[
+                            "Fecha Formateada"] = potencia_media_SE[
+                                "Fecha"].dt.strftime("%Y-%m-%d")
 
                         grafico = (
                             alt.Chart(potencia_media_SE)
@@ -1072,7 +1087,10 @@ if seccion == "Estadísticas":
 
                         # Crear archivo Excel en memoria
                         archivo_temporal_pd = BytesIO()
-                        potencia_media.to_excel(archivo_temporal_pd, index=True)
+                        potencia_media.to_excel(
+                            archivo_temporal_pd,
+                            index=True
+                            )
                         archivo_temporal_pd.seek(0)
 
                         # Botón de descarga
@@ -1084,14 +1102,15 @@ if seccion == "Estadísticas":
                             sheet"""
                         )
                     else:
-                        st.warning('Proporcione un intervalo de tiempo mayor a un día',icon="⚠️")
+                        st.warning("""Proporcione un intervalo de tiempo mayor
+                        a un día""", icon="⚠️")
 
             with tab2:
 
                 # Todo sobre ENERGIA en tab2
 
                 if option == "Semanal":
-                    if len(chart_pot.resample("W"))>1:
+                    if len(chart_pot.resample("W")) > 1:
 
                         Energia_SE = chart_pot.resample(
                             "W"
@@ -1101,11 +1120,14 @@ if seccion == "Estadísticas":
                         # Cuenta la cantidad de datos por cada semana
                         contador_datos["contador_datos"] = (
                             contador_datos["Potencia (kW)"] * intervalos
-                            # A la cantidad de datos de potencia la multiplica por
-                            # el intervalo de tiempo al que corresponde cada dato
+                            # A la cantidad de datos de potencia la multiplica
+                            # por el intervalo de tiempo al que corresponde
+                            # cada dato
                         )
                         contador_datos = contador_datos.drop(
-                            columns=["Temperatura de Celda (°C)", "Potencia (kW)"],
+                            columns=[
+                                "Temperatura de Celda (°C)",
+                                "Potencia (kW)"],
                             errors="ignore",
                         )
                         # Se quitan columnas innecesarias
@@ -1136,8 +1158,13 @@ if seccion == "Estadísticas":
                             alt.Chart(Energia_SE)
                             .mark_bar(color="yellowgreen")
                             .encode(
-                                x=alt.X("index:N", sort=new_index, title="Fecha"),
-                                y=alt.Y("Potencia (kW):Q", title="Energía (kWh)"),
+                                x=alt.X(
+                                    "index:N",
+                                    sort=new_index,
+                                    title="Fecha"),
+                                y=alt.Y(
+                                    "Potencia (kW):Q",
+                                    title="Energía (kWh)"),
                             )
                             .interactive()
                         )
@@ -1179,13 +1206,14 @@ if seccion == "Estadísticas":
                             sheet"""
                         )
                     else:
-                        st.warning('Proporcione un intervalo de tiempo mayor a una semana',icon="⚠️")
+                        st.warning("""Proporcione un intervalo de tiempo mayor
+                        a una semana""", icon="⚠️")
 
                 if option == "Diario":
-                    if len(chart_pot.resample("D"))>1:
+                    if len(chart_pot.resample("D")) > 1:
                         Energia_SE = chart_pot.resample(
                             "D"
-                        ).mean()  # Uso el resample para calcular tomar los dias y
+                        ).mean()  # Uso el resample para tomar los dias y
                         # el mean para calcular la media
                         Energia_SE["Potencia (kW)"] = Energia_SE[
                             "Potencia (kW)"] * 24
@@ -1199,8 +1227,12 @@ if seccion == "Estadísticas":
                             alt.Chart(Energia_SE)
                             .mark_bar(color="yellowgreen")
                             .encode(
-                                x=alt.X("Fecha Formateada:O", title="Fecha"),
-                                y=alt.Y("Potencia (kW):Q", title="Energía (kWh)"),
+                                x=alt.X(
+                                    "Fecha Formateada:O",
+                                    title="Fecha"),
+                                y=alt.Y(
+                                    "Potencia (kW):Q",
+                                    title="Energía (kWh)"),
                             )
                             .interactive()
                         )
@@ -1246,29 +1278,35 @@ if seccion == "Estadísticas":
                             sheet"""
                         )
                     else:
-                        st.warning('Proporcione un intervalo de tiempo mayor a un día',icon="⚠️")
+                        st.warning("""Proporcione un intervalo de tiempo mayor
+                        a un día""", icon="⚠️")
         #
         # Todo sobre Datos caracteristicos
         #
 
         st.header("Datos característicos", divider="red")
         if option == "Diario":
-            if len(chart_pot.resample("D"))>1:
+            if len(chart_pot.resample("D")) > 1:
                 Energia = Energia_SE.set_index("Fecha Formateada")
                 C1E, C2E, C3E, *_ = Energia.columns
                 Energia = Energia.drop(C1E, axis=1).drop(C2E, axis=1)
-                potencia_media = potencia_media_SE.set_index("Fecha Formateada")
+                potencia_media = potencia_media_SE.set_index(
+                    "Fecha Formateada")
                 C1P, C2P, C3P, *_ = potencia_media.columns
-                potencia_media = potencia_media.drop(C1P, axis=1).drop(C2P, axis=1)
-        
+                potencia_media = potencia_media.drop(C1P, axis=1).drop(
+                    C2P,
+                    axis=1)
         if option == "Semanal":
-            if len(chart_pot.resample("w"))>1:
+            if len(chart_pot.resample("w")) > 1:
                 Energia = Energia_SE.set_index("Fecha Formateada")
                 C1E, C2E, C3E, *_ = Energia.columns
                 Energia = Energia.drop(C1E, axis=1).drop(C2E, axis=1)
-                potencia_media = potencia_media_SE.set_index("Fecha Formateada")
+                potencia_media = potencia_media_SE.set_index(
+                    "Fecha Formateada")
                 C1P, C2P, C3P, *_ = potencia_media.columns
-                potencia_media = potencia_media.drop(C1P, axis=1).drop(C2P, axis=1)
+                potencia_media = potencia_media.drop(C1P, axis=1).drop(
+                    C2P,
+                    axis=1)
 
         col1, col2 = st.columns([0.5, 0.5], gap="large")
         with col1:
@@ -1276,7 +1314,7 @@ if seccion == "Estadísticas":
 
             st.markdown("### Potencia")
             if option == "Diario":
-                if len(chart_pot.resample("D"))>1:
+                if len(chart_pot.resample("D")) > 1:
                     Top_potencias = potencia_media.sort_values(
                         by="Potencia (kW)", ascending=False
                     ).head(10)
@@ -1307,7 +1345,7 @@ if seccion == "Estadísticas":
                     )
 
             if option == "Semanal":
-                if len(chart_pot.resample("W"))>1:
+                if len(chart_pot.resample("W")) > 1:
                     Top_potencias = potencia_media.sort_values(
                         by="Potencia (kW)", ascending=False
                     ).head(10)
@@ -1342,7 +1380,7 @@ if seccion == "Estadísticas":
             # Energia en col2
             st.markdown("### Energía")
             if option == "Diario":
-                if len(chart_pot.resample("D"))>1:
+                if len(chart_pot.resample("D")) > 1:
                     Top_Energia = Energia.sort_values(
                         by="Potencia (kW)", ascending=False
                     ).head(10)
@@ -1377,7 +1415,7 @@ if seccion == "Estadísticas":
                     )
 
             if option == "Semanal":
-                if len(chart_pot.resample("W"))>1:
+                if len(chart_pot.resample("W")) > 1:
                     Top_Energia = Energia.sort_values(
                         by="Potencia (kW)", ascending=False
                     ).head(10)
@@ -1423,7 +1461,7 @@ if seccion == "Estadísticas":
         )
 
         if option == "Semanal":
-            if len(chart_pot.resample("W"))>1:
+            if len(chart_pot.resample("W")) > 1:
                 with col1:
                     # Col 1 para maximos (semanal)
 
@@ -1517,7 +1555,7 @@ if seccion == "Estadísticas":
                     )
 
         if option == "Diario":
-            if len(chart_pot.resample("D"))>1:
+            if len(chart_pot.resample("D")) > 1:
                 with col1:
 
                     # Col 1 para maximos (diarios)
@@ -1985,10 +2023,8 @@ if seccion == "Ayuda":
                 texto_parcial = texto_parcial + word + " "
                 texto_placeholder.markdown(texto_parcial)
                 time.sleep(0.013)
-        
     if texto == 'pascuas':
-            st.link_button("Trust me","https://matias.me/nsfw/", icon='🥚' )
- 
+        st.link_button("Trust me", "https://matias.me/nsfw/", icon='🥚')
 
 # --- Sección 4: Feedback ---
 if seccion == "Feedback":
