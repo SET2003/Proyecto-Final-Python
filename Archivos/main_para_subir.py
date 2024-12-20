@@ -969,18 +969,17 @@ if seccion == "Estadísticas":
                             for fecha in potencia_media_SE.index
                         ]
                         # Se define nuevo índice en el formato indicado
-                        indice_no_string = new_index
+                        indice_string = new_index
                         new_index = pd.DataFrame(new_index, columns=["Fecha"])
                         # Se transforma la lista de índices a una sola columna
                         # de un dataframe
-                        potencia_media_SE.index = indice_no_string
+                        potencia_media_SE.index = indice_string
                         potencia_media_SE = potencia_media_SE.reset_index()
                         # Esto resetea el índice (1,2,...), y convierte el
                         # índice actual en una columna del df, llamada 'index'
                         potencia_media_SE["Fecha Formateada"] = (
                             potencia_media_SE["index"])
-                        # Se le cambia el nombre a 'index' por 'fecha
-                        # formateada'
+                        # Se crea una nueva columna llamada 'fecha formateada' igual a  'index
                         grafico = (
                             alt.Chart(potencia_media_SE)
                             .mark_bar()  # Gráfico de barras
@@ -1148,10 +1147,10 @@ if seccion == "Estadísticas":
                             f"Week {fecha.year}-{fecha.month}-{fecha.day}"
                             for fecha in Energia_SE.index
                         ]
-                        indice_no_string = new_index
+                        indice_string = new_index
                         new_index = pd.DataFrame(new_index, columns=["Fecha"])
 
-                        Energia_SE.index = indice_no_string
+                        Energia_SE.index = indice_string
                         Energia_SE = Energia_SE.reset_index()
                         Energia_SE["Fecha Formateada"] = Energia_SE["index"]
                         grafico = (
