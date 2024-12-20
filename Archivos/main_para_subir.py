@@ -199,7 +199,7 @@ def justificado_latex(texto, altura=400):
 
 if "datos" not in st.session_state:
     datos = pd.read_excel(
-        "Archivos\\Datos_climatologicos_Santa_Fe_2019.xlsx", index_col=0
+        "Archivos/Datos_climatologicos_Santa_Fe_2019.xlsx", index_col=0
     )
     G, T = datos.columns
     N = 12
